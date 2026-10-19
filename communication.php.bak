@@ -1,0 +1,185 @@
+<?php
+$pageTitle = 'Pesan & Broadcast Komunikasi Pabrik';
+require_once __DIR__ . '/includes/header.php';
+
+$pdo = Database::getConnection();
+$message = '';
+
+$channelFilter = $_GET['channel'] ?? 'ALL';
+
+// Handle Broadcast Send
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send_broadcast') {
+    $targetChannel = $_POST['target_channel'] ?? 'ALL';
+    $title = trim($_POST['title'] ?? '');
+    $body = trim($_POST['message'] ?? '');
+    $priority = $_POST['priority'] ?? 'NORMAL';
+
+    if (empty($title) || empty($body)) {
+        $message = "Judul dan pesan tidak boleh kosong.";
+    } else {
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO broadcast_messages (sender_nik, sender_name, target_channel, title, message, priority)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $currentUser['nik'],
+                $currentUser['full_name'],
+                $targetChannel,
+                $title,
+                $body,
+                $priority
+            ]);
+            $message = "Pengumuman siaran berhasil dikirimkan ke saluran [{$targetChannel}]!";
+        } catch (Exception $e) {
+            $message = "Gagal mengirim broadcast: " . $e->getMessage();
+        }
+    }
+}
+
+// Fetch Messages based on Channel Filter
+$where = "1=1";
+$params = [];
+if ($channelFilter !== 'ALL') {
+    $where = "(target_channel = ? OR target_channel = 'ALL')";
+    $params[] = $channelFilter;
+}
+
+$stmt = $pdo->prepare("
+    SELECT * FROM broadcast_messages 
+    WHERE {$where}
+    ORDER BY created_at DESC 
+    LIMIT 30
+");
+$stmt->execute($params);
+$broadcasts = $stmt->fetchAll();
+?>
+
+<!-- Channel Filter Pills -->
+<div class="tabs">
+    <a href="communication.php?channel=ALL" class="tab-btn <?= $channelFilter === 'ALL' ? 'active' : '' ?>">
+        📢 Seluruh Pabrik (ALL)
+    </a>
+    <a href="communication.php?channel=WH" class="tab-btn <?= $channelFilter === 'WH' ? 'active' : '' ?>">
+        📦 Dept Gudang Bahan (WH)
+    </a>
+    <a href="communication.php?channel=MAT" class="tab-btn <?= $channelFilter === 'MAT' ? 'active' : '' ?>">
+        ⚗️ Dept Material (MAT)
+    </a>
+    <a href="communication.php?channel=BLD" class="tab-btn <?= $channelFilter === 'BLD' ? 'active' : '' ?>">
+        🚗 Dept Building (BLD)
+    </a>
+    <a href="communication.php?channel=CUR" class="tab-btn <?= $channelFilter === 'CUR' ? 'active' : '' ?>">
+        🔥 Dept Curing (CUR)
+    </a>
+    <a href="communication.php?channel=FI" class="tab-btn <?= $channelFilter === 'FI' ? 'active' : '' ?>">
+        🔍 Dept Final Inspection (FI)
+    </a>
+</div>
+
+<?php if (!empty($message)): ?>
+    <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-weight: 600;">
+        <?= htmlspecialchars($message) ?>
+    </div>
+<?php endif; ?>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+    <!-- Box 1: Kirim Pengumuman Siaran -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <div class="card-title">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                Buat Siaran Pengumuman Baru
+            </div>
+        </div>
+
+        <form method="POST" action="communication.php?channel=<?= $channelFilter ?>">
+            <input type="hidden" name="action" value="send_broadcast">
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label required">Saluran Departemen Tujuan</label>
+                    <select name="target_channel" class="form-select" required>
+                        <option value="ALL">Seluruh Pabrik (All Departments)</option>
+                        <option value="WH">Grup Dept Gudang Bahan (WH)</option>
+                        <option value="MAT">Grup Dept Material (MAT)</option>
+                        <option value="BLD">Grup Dept Building (BLD)</option>
+                        <option value="CUR">Grup Dept Curing (CUR)</option>
+                        <option value="FI">Grup Final Inspection (FI)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">Prioritas Siaran</label>
+                    <select name="priority" class="form-select" required>
+                        <option value="NORMAL">Normal (Informasi Rutin)</option>
+                        <option value="URGENT">Penting / Urgent (Instruksi Shift)</option>
+                        <option value="SOS">Kritis / Darurat Keselamatan K3</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label required">Judul Pengumuman</label>
+                <input type="text" name="title" class="form-input" placeholder="Contoh: Perubahan Jadwal Ganti Mold Shift 2" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="form-label required">Isi Pesan Siaran</label>
+                <textarea name="message" class="form-textarea" rows="4" placeholder="Tulis instruksi atau pengumuman resmi di sini..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
+                Kirim Siaran ke Saluran Terpilih
+            </button>
+        </form>
+    </div>
+
+    <!-- Box 2: Feed Siaran Masuk -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <div class="card-title">
+                Saluran Pesan: [<?= htmlspecialchars($channelFilter) ?>]
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; max-height: 480px; overflow-y: auto; padding-right: 4px;">
+            <?php if (empty($broadcasts)): ?>
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    Belum ada siaran pesan pada saluran ini.
+                </div>
+            <?php else: ?>
+                <?php foreach ($broadcasts as $bc): ?>
+                    <div style="background: var(--bg-input); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); border-left: 4px solid <?= $bc['priority'] === 'SOS' ? '#ef4444' : ($bc['priority'] === 'URGENT' ? '#f59e0b' : '#3b82f6') ?>;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <div>
+                                <span class="badge <?= $bc['priority'] === 'SOS' ? 'badge-danger' : ($bc['priority'] === 'URGENT' ? 'badge-warning' : 'badge-info') ?>">
+                                    <?= htmlspecialchars($bc['priority']) ?>
+                                </span>
+                                <span class="badge badge-secondary" style="margin-left: 6px;">
+                                    Saluran: <?= htmlspecialchars($bc['target_channel']) ?>
+                                </span>
+                            </div>
+                            <span style="font-size: 11px; color: var(--text-muted);">
+                                <?= date('d M Y H:i', strtotime($bc['created_at'])) ?>
+                            </span>
+                        </div>
+
+                        <div style="font-weight: 700; font-size: 14px; color: var(--text-primary); margin-bottom: 6px;">
+                            <?= htmlspecialchars($bc['title']) ?>
+                        </div>
+
+                        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px;">
+                            <?= nl2br(htmlspecialchars($bc['message'])) ?>
+                        </div>
+
+                        <div style="font-size: 11.5px; color: var(--text-muted);">
+                            Oleh: <strong><?= htmlspecialchars($bc['sender_name']) ?></strong> (NIK: <?= htmlspecialchars($bc['sender_nik']) ?>)
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
