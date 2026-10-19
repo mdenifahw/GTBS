@@ -355,6 +355,7 @@ class Auth {
                 <head>
                     <meta charset='UTF-8'>
                     <title>403 Akses Ditolak - GT Barcode System</title>
+                    <link rel='icon' type='image/png' href='assets/img/Logo_Aplikasi.png'>
                     <link rel='stylesheet' href='assets/css/style.css'>
                     <style>
                         body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0b0f19; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }

@@ -35,6 +35,7 @@ if (!Auth::canGenerateBarcode()) {
         <head>
             <meta charset='UTF-8'>
             <title>403 Akses Ditolak - GT Barcode System</title>
+            <link rel='icon' type='image/png' href='assets/img/Logo_Aplikasi.png'>
             <link rel='stylesheet' href='assets/css/style.css'>
             <style>
                 body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0b0f19; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
@@ -133,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             } else {
                 // Unit Tunggal / Standar
                 $insertMasterStmt->execute([$code, $name, $category, $code, $name, $category, $deptId, $sectionId, $description, $unit]);
-                
+
                 // Mesin dan Aktivitas memiliki sifat barcode identitas tetap yang dipergunakan sekali
                 // Sistem langsung mendaftarkan 1 barcode resmi tetap ke database agar siap discan di lapangan
                 if ($category === 'MACHINE' || $category === 'ACTIVITY') {
@@ -176,8 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     } elseif (($master['category'] ?? 'PRODUCT') !== 'PRODUCT') {
         $catLabel = ($master['category'] === 'MACHINE') ? 'MESIN / ALAT' : 'AKTIVITAS';
         $message = "Pemberitahuan: Item Code <strong>{$masterCode}</strong> adalah Kategori <strong>{$catLabel}</strong>.<br>" .
-                   "Barcode untuk Mesin dan Aktivitas bersifat <strong>identitas tetap</strong> yang dipergunakan sekali dan telah otomatis terdaftar saat pembuatan master.<br>" .
-                   "Kotak penerbitan serial batch dengan nomor urut <code>[YY][MM][00001]</code> hanya dikhususkan untuk <strong>Kategori PRODUK</strong> yang diproduksi terus-menerus.";
+            "Barcode untuk Mesin dan Aktivitas bersifat <strong>identitas tetap</strong> yang dipergunakan sekali dan telah otomatis terdaftar saat pembuatan master.<br>" .
+            "Kotak penerbitan serial batch dengan nomor urut <code>[YY][MM][00001]</code> hanya dikhususkan untuk <strong>Kategori PRODUK</strong> yang diproduksi terus-menerus.";
         $messageType = 'warning';
     } else {
         try {
@@ -366,7 +367,8 @@ $seqSummary = $pdo->query("
                                 <option value="<?= htmlspecialchars($iCode) ?>">
                                     <?= htmlspecialchars($iName) ?> (Item Produk)
                                 </option>
-                            <?php endif; endforeach; ?>
+                        <?php endif;
+                        endforeach; ?>
                     </datalist>
                 </div>
             </div>
