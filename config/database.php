@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/app.php';
+
 /**
  * ==============================================================================================
  * SISTEM BARCODE PABRIK BAN (GTBS) - PT GAJAH TUNGGAL TBK

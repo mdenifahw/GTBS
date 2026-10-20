@@ -43,7 +43,8 @@ $shiftInfo = ShiftHelper::getShiftInfo();
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Master CSS Design System (Tema Gelap, Glassmorphism & Responsif) -->
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../assets/css/style.css') ?>">
+    <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('gtbs_theme') || 'dark');</script>
 </head>
 
 <body>
@@ -67,8 +68,10 @@ $shiftInfo = ShiftHelper::getShiftInfo();
                 <h1 class="page-title"><?= $pageTitle ?? 'Dashboard' ?></h1>
 
                 <!-- Badge / Pill Indikator Shift Berjalan Realtime -->
-                <div class="shift-pill">
-                    <span id="shiftPill"><?= $shiftInfo['label'] ?></span>
+                <div class="shift-pill" title="<?= htmlspecialchars($shiftInfo['label']) ?>">
+                    <span class="shift-dot"></span>
+                    <span id="shiftName">Shift <?= (int)$shiftInfo['shift'] ?></span>
+                    <span class="shift-hours" id="shiftHours">(<?= htmlspecialchars(substr($shiftInfo['label'], strpos($shiftInfo['label'], '(') + 1, -1)) ?>)</span>
                 </div>
             </div>
 
@@ -77,10 +80,14 @@ $shiftInfo = ShiftHelper::getShiftInfo();
 
 
                 <!-- Jam Digital Realtime (Diperbarui setiap detik oleh main.js) -->
-                <div id="liveClock" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);"><?= $shiftInfo['time'] ?> WIB</div>
+                <div class="live-clock-badge" title="Waktu Server (WIB)">
+                    <svg class="clock-svg" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="2"></circle><path stroke-linecap="round" stroke-width="2" d="M12 7v5l3 2"></path></svg>
+                    <span id="liveClock"><?= $shiftInfo['time'] ?></span>
+                    <span class="clock-tz">WIB</span>
+                </div>
 
                 <!-- Tombol Ganti Tema (Dark Mode / Light Mode) -->
-                <button class="header-btn" id="themeToggleBtn" title="Ganti Tema">
+                <button class="header-btn header-btn-icon" id="themeToggleBtn" title="Ganti Tema" aria-label="Ganti Tema">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                     </svg>
@@ -91,11 +98,11 @@ $shiftInfo = ShiftHelper::getShiftInfo();
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
-                    SOS K3
+                    <span class="btn-sos-text">SOS K3</span>
                 </button>
 
                 <!-- Tombol Keluar (Logout) -->
-                <a href="logout.php" class="header-btn" title="Keluar">
+                <a href="logout.php" class="header-btn header-btn-icon btn-logout" title="Keluar" aria-label="Keluar">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>

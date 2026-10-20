@@ -28,13 +28,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pdo = Database::getConnection();
         // Insert into k3_ambulance_calls
+        $callNo = 'AMB-' . date('ymd') . rand(1000, 9999);
+        $callerId = (int)($user['id'] ?? 1);
+        $deptId = !empty($user['dept_id']) ? (int)$user['dept_id'] : null;
+        $fullName = $user['full_name'] ?? 'Karyawan Pabrik';
+        $nik = $user['nik'] ?? 'GT-UNKNOWN';
+
         $stmt = $pdo->prepare("
-            INSERT INTO k3_ambulance_calls (caller_name, caller_nik, caller_phone, location, status, incident_type, notes)
-            VALUES (?, ?, ?, ?, 'DISPATCHED', 'EMERGENCY', ?)
+            INSERT INTO k3_ambulance_calls (
+                call_no, caller_id, dept_id, location_detail, patient_condition, priority,
+                caller_name, caller_nik, caller_phone, location, status, incident_type, notes
+            ) VALUES (
+                ?, ?, ?, ?, ?, 'HIGH_EMERGENCY',
+                ?, ?, ?, ?, 'DISPATCHED', 'EMERGENCY', ?
+            )
         ");
         $stmt->execute([
-            $user['full_name'],
-            $user['nik'],
+            $callNo,
+            $callerId,
+            $deptId,
+            $location,
+            $notes,
+            $fullName,
+            $nik,
             '0812-XXXX-XXXX',
             $location,
             $notes

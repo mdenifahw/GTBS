@@ -41,7 +41,7 @@ class ExportHelper {
         fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
         // Tulis baris judul kolom (Header baris pertama)
-        fputcsv($output, $headers, ';');
+        fputcsv($output, $headers, ';', '"', "\\");
 
         // Tulis setiap baris data
         foreach ($data as $row) {
@@ -56,7 +56,7 @@ class ExportHelper {
                     $formattedRow[] = (string)$val;
                 }
             }
-            fputcsv($output, $formattedRow, ';');
+            fputcsv($output, $formattedRow, ';', '"', "\\");
         }
 
         fclose($output);

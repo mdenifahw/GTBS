@@ -771,7 +771,15 @@ body {
     color: #f87171;
 }
 
-/* Responsive adjustments across all devices */
+/* Responsive adjustments across all devices (Desktop, Tablet, Mobile) */
+.sidebar-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: inherit;
+    display: block;
+}
+
 @media (max-width: 900px) {
     .sidebar {
         transform: translateX(-100%);
@@ -784,7 +792,9 @@ body {
         width: 100%;
     }
     .mobile-toggle {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 }
 
@@ -792,64 +802,155 @@ body {
     .header {
         padding: 0 12px;
         gap: 8px;
-    }
-    .page-title {
-        max-width: 180px;
-    }
-    .shift-hours {
-        display: none;
-    }
-    .btn-logout-text {
-        display: none;
-    }
-    .live-clock-badge {
-        padding: 5px 8px;
-        font-size: 11px;
-    }
-}
-
-@media (max-width: 520px) {
-    .header {
-        padding: 6px 10px;
-        min-height: 58px;
+        min-height: 56px;
     }
     .header-left {
         gap: 8px;
+        min-width: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
     }
     .page-title {
-        max-width: 130px;
-        font-size: 13.5px;
+        font-size: 14.5px;
+        max-width: 170px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .shift-pill {
-        padding: 3px 7px;
-        font-size: 10.5px;
+        padding: 3px 8px;
+        font-size: 11px;
+        flex-shrink: 0;
     }
-    .clock-tz {
-        display: none;
+    .shift-hours {
+        display: none !important;
     }
     .header-right {
-        gap: 5px;
-    }
-    .header-btn {
-        padding: 5px 7px;
-        font-size: 11px;
+        gap: 6px;
+        flex-shrink: 0;
     }
     .btn-sos-text {
-        display: none;
+        display: none !important;
+    }
+    .btn-logout-text {
+        display: none !important;
+    }
+    .live-clock-badge {
+        padding: 5px 8px;
+        font-size: 11.5px;
     }
 }
 
-@media (max-width: 380px) {
+/* Penyesuaian Khusus Layar Smartphone (360px - 576px) */
+/* Mencegah tabrakan antara jam digital, judul halaman, dan tombol aksi */
+@media (max-width: 576px) {
+    .header {
+        padding: 0 8px;
+        min-height: 52px;
+        height: 52px;
+        gap: 6px;
+        justify-content: space-between;
+    }
+    .header-left {
+        gap: 6px;
+        min-width: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+    }
+    .mobile-toggle {
+        padding: 4px;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+    }
     .page-title {
-        display: none;
+        font-size: 13px;
+        font-weight: 700;
+        max-width: 135px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1;
+    }
+    /* Sembunyikan badge shift di top bar HP agar judul lega (sudah tampil di sidebar & dashboard) */
+    .shift-pill {
+        display: none !important;
+    }
+    
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-shrink: 0;
+    }
+    
+    /* Tombol tema disembunyikan di header HP agar tidak memakan tempat (tersedia di sidebar) */
+    #themeToggleBtn {
+        display: none !important;
+    }
+    
+    /* Jam digital super ramping dan jelas tanpa tabrakan */
+    .live-clock-badge {
+        display: inline-flex !important;
+        align-items: center;
+        padding: 4px 7px;
+        font-size: 11px;
+        font-weight: 700;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        letter-spacing: 0.3px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .clock-svg {
+        display: none !important;
+    }
+    .clock-tz {
+        display: none !important;
+    }
+    
+    /* Tombol SOS darurat tetap menonjol dan mudah di-tap satu jari */
+    .header-btn {
+        padding: 5px;
+        min-width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .btn-sos {
+        background: rgba(239, 68, 68, 0.25);
+        border: 1px solid #ef4444;
+        color: #f87171;
+    }
+    .btn-sos-text {
+        display: none !important;
+    }
+    .btn-logout {
+        min-width: 32px;
+        height: 32px;
+        padding: 5px;
+    }
+}
+
+/* Layar Ekstra Sempit (<= 360px) */
+@media (max-width: 360px) {
+    .header {
+        padding: 0 6px;
+        gap: 4px;
+    }
+    .page-title {
+        max-width: 105px;
+        font-size: 12px;
+    }
+    .header-right {
+        gap: 4px;
     }
     .live-clock-badge {
-        display: none;
+        padding: 3px 5px;
+        font-size: 10.5px;
     }
-}.sidebar-logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: inherit;
-    display: block;
 }

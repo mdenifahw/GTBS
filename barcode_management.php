@@ -23,7 +23,7 @@
  * ==============================================================================
  */
 $pageTitle = 'Generate & Registrasi Barcode';
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/helpers/auth.php';
 
 // Proteksi Hak Akses: HANYA Super Admin & Admin Dept
 if (!Auth::canGenerateBarcode()) {
@@ -57,6 +57,8 @@ if (!Auth::canGenerateBarcode()) {
         </html>
     ");
 }
+
+require_once __DIR__ . '/includes/header.php';
 
 $pdo = Database::getConnection();
 $message = '';

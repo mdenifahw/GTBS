@@ -30,11 +30,13 @@
  * ==============================================================================
  */
 $pageTitle = 'Kelola Karyawan & Personel';
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/helpers/auth.php';
 
 // Only Admin / Super Admin / Head can manage users
 // Sesuai Diagram Hierarki Jabatan: HANYA Super Admin yang memiliki hak akses Kelola Karyawan
 Auth::requireRole(['super_admin']);
+
+require_once __DIR__ . '/includes/header.php';
 
 $pdo = Database::getConnection();
 $message = '';

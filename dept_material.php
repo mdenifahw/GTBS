@@ -21,10 +21,13 @@
  * ==============================================================================
  */
 $pageTitle = 'Dept Material (Mixing, Calender, Delivery)';
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/helpers/auth.php';
 
 // Proteksi Hak Akses Hierarki: Hanya Super Admin & Admin Dept terkait
+// (Dijalankan SEBELUM layout dicetak agar respon 403 valid & tanpa warning 'headers already sent')
 Auth::requireDeptAccess('MAT');
+
+require_once __DIR__ . '/includes/header.php';
 
 $pdo = Database::getConnection();
 $message = '';

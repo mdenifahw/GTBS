@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     try {
         $stmt = $pdo->prepare("UPDATE k3_ambulance_calls SET status = ? WHERE id = ?");
         $stmt->execute([$status, $callId]);
-        $message = "Status panggilan darurat diperbarui menjadi: " . htmlspecialchars($status);
+        $message = "Status panggilan darurat diperbarui menjadi: " . e($status, "ARRIVED");
     } catch (Exception $e) {
         $message = "Gagal memperbarui status: " . $e->getMessage();
     }
@@ -59,7 +59,7 @@ $sosCalls = $pdo->query("
 
 <?php if (!empty($message)): ?>
     <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; padding: 16px 20px; border-radius: 8px; margin-bottom: 24px; font-weight: 700; font-size: 14px;">
-        <?= htmlspecialchars($message) ?>
+        <?= e($message) ?>
     </div>
 <?php endif; ?>
 
@@ -110,40 +110,48 @@ $sosCalls = $pdo->query("
                     </tr>
                 <?php else: ?>
                     <?php foreach ($sosCalls as $sc): ?>
-                        <tr>
-                            <td><?= date('d M Y H:i:s', strtotime($sc['created_at'])) ?></td>
-                            <td>
-                                <strong><?= htmlspecialchars($sc['caller_name']) ?></strong>
-                                <div style="font-size: 11px; color: var(--text-muted);">NIK: <?= htmlspecialchars($sc['caller_nik']) ?></div>
-                            </td>
-                            <td><strong style="color: #60a5fa;"><?= htmlspecialchars($sc['location']) ?></strong></td>
-                            <td style="max-width: 250px;"><?= htmlspecialchars($sc['notes'] ?? $sc['incident_type']) ?></td>
-                            <td>
-                                <span class="badge <?= $sc['status'] === 'DISPATCHED' ? 'badge-danger' : ($sc['status'] === 'ARRIVED' ? 'badge-warning' : 'badge-success') ?>">
-                                    <?= htmlspecialchars($sc['status']) ?>
-                                </span>
-                            </td>
-                            <td>
-                                <?php if ($sc['status'] === 'DISPATCHED'): ?>
-                                    <form method="POST" action="k3_emergency.php" style="display: inline;">
-                                        <input type="hidden" name="action" value="update_ambulance_status">
-                                        <input type="hidden" name="call_id" value="<?= $sc['id'] ?>">
-                                        <input type="hidden" name="status" value="ARRIVED">
-                                        <button type="submit" class="btn btn-warning btn-sm">Tiba di TKP</button>
-                                    </form>
-                                <?php elseif ($sc['status'] === 'ARRIVED'): ?>
-                                    <form method="POST" action="k3_emergency.php" style="display: inline;">
-                                        <input type="hidden" name="action" value="update_ambulance_status">
-                                        <input type="hidden" name="call_id" value="<?= $sc['id'] ?>">
-                                        <input type="hidden" name="status" value="RESOLVED">
-                                        <button type="submit" class="btn btn-success btn-sm">Insiden Selesai</button>
-                                    </form>
-                                <?php else: ?>
-                                    <span style="font-size: 11.5px; color: var(--color-success); font-weight: 600;">Selesai Ditangani</span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
+    <?php
+        $callerName = !empty($sc['caller_name']) ? $sc['caller_name'] : (!empty($sc['caller_id']) ? 'Personel Plant (ID: ' . $sc['caller_id'] . ')' : 'Personel Pabrik');
+        $callerNik  = !empty($sc['caller_nik']) ? $sc['caller_nik'] : '-';
+        $location   = !empty($sc['location']) ? $sc['location'] : (!empty($sc['location_detail']) ? $sc['location_detail'] : 'Area Produksi');
+        $notes      = !empty($sc['notes']) ? $sc['notes'] : (!empty($sc['patient_condition']) ? $sc['patient_condition'] : (!empty($sc['incident_type']) ? $sc['incident_type'] : 'Kecelakaan Kerja / Medis'));
+        $status     = !empty($sc['status']) ? strtoupper($sc['status']) : 'REQUESTED';
+        $timeStr    = formatDateSafe($sc['created_at'] ?? null);
+    ?>
+    <tr>
+        <td><?= e($timeStr) ?></td>
+        <td>
+            <strong><?= e($callerName) ?></strong>
+            <div style="font-size: 11px; color: var(--text-muted);">NIK: <?= e($callerNik) ?></div>
+        </td>
+        <td><strong style="color: #60a5fa;"><?= e($location) ?></strong></td>
+        <td style="max-width: 250px;"><?= e($notes) ?></td>
+        <td>
+            <span class="badge <?= in_array($status, ['DISPATCHED', 'HIGH_EMERGENCY', 'EMERGENCY']) ? 'badge-danger' : (in_array($status, ['ARRIVED', 'REQUESTED']) ? 'badge-warning' : 'badge-success') ?>">
+                <?= e($status) ?>
+            </span>
+        </td>
+        <td>
+            <?php if (in_array($status, ['DISPATCHED', 'REQUESTED', 'HIGH_EMERGENCY', 'EMERGENCY'])): ?>
+                <form method="POST" action="k3_emergency.php" style="display: inline;">
+                    <input type="hidden" name="action" value="update_ambulance_status">
+                    <input type="hidden" name="call_id" value="<?= (int)$sc['id'] ?>">
+                    <input type="hidden" name="status" value="ARRIVED">
+                    <button type="submit" class="btn btn-warning btn-sm">Tiba di TKP</button>
+                </form>
+            <?php elseif ($status === 'ARRIVED'): ?>
+                <form method="POST" action="k3_emergency.php" style="display: inline;">
+                    <input type="hidden" name="action" value="update_ambulance_status">
+                    <input type="hidden" name="call_id" value="<?= (int)$sc['id'] ?>">
+                    <input type="hidden" name="status" value="RESOLVED">
+                    <button type="submit" class="btn btn-success btn-sm">Insiden Selesai</button>
+                </form>
+            <?php else: ?>
+                <span style="font-size: 11.5px; color: var(--color-success); font-weight: 600;">Selesai Ditangani</span>
+            <?php endif; ?>
+        </td>
+    </tr>
+<?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
         </table>
