@@ -59,6 +59,9 @@ if (!in_array($requestedTab, $allowedTabs)) {
     $activeTab = $requestedTab;
 }
 
+$currentShiftInt = (int)($shiftInfo['shift'] ?? 1);
+$currentUserId = $currentUser['id'] ?? 1;
+
 // Proteksi Keamanan POST Material
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $actToTab = [
@@ -96,21 +99,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         try {
             $pdo->beginTransaction();
 
+            $opId = $currentUserId;
+            if (!$opId && !empty($nik)) {
+                $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+                $uStmt->execute([$nik]);
+                $opId = $uStmt->fetchColumn() ?: 1;
+            }
+
             $act = $pdo->prepare("
-                INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-                VALUES (2, 3, ?, 'MIXING_PRODUCED', ?, ?)
+                INSERT INTO production_activities (
+                    barcode, dept_id, section_id, prod_date, shift, status, 
+                    qty, unit, operator_id, operator_nik, action_type, details
+                ) VALUES (
+                    ?, 2, 3, CURRENT_DATE, ?, 'NORMAL', 
+                    ?, 'KG', ?, ?, 'MIXING_PRODUCED', ?
+                )
             ");
             $act->execute([
-                $nik, 
-                "Mixing di Mesin {$machineId} | Kompon: {$compoundCode} | Berat: {$weightKg} Kg | Batch: {$batchNo} | Barcode: {$barcode}",
-                'Shift ' . $shiftInfo['shift']
+                $barcode,
+                $currentShiftInt,
+                $weightKg,
+                $opId,
+                $nik,
+                "Mixing di Mesin {$machineId} | Kompon: {$compoundCode} | Berat: {$weightKg} Kg | Batch: {$batchNo} | Barcode: {$barcode}"
             ]);
 
             $scada = $pdo->prepare("
-                INSERT INTO production_scada_logs (barcode, dept_id, section_id, machine_id, operator_nik, item_code, qty, quality_status, shift)
-                VALUES (?, 'MAT', 'mixing', ?, ?, ?, ?, 'PASS', ?)
+                INSERT INTO production_scada_logs (
+                    barcode, dept_id, section_id, machine_id, operator_nik, 
+                    item_code, qty, quality_status, log_date, shift, log_hour
+                ) VALUES (
+                    ?, 'MAT', 'mixing', ?, ?, 
+                    ?, ?, 'PASS', CURRENT_DATE, ?, EXTRACT(HOUR FROM CURRENT_TIME)
+                )
             ");
-            $scada->execute([$barcode, $machineId, $nik, $compoundCode, $weightKg, 'Shift ' . $shiftInfo['shift']]);
+            $scada->execute([$barcode, $machineId, $nik, $compoundCode, $weightKg, 'Shift ' . $currentShiftInt]);
 
             $pdo->commit();
             $message = "Sukses! Transaksi Mixing untuk kompon {$compoundCode} berhasil disimpan ke database dan SCADA.";
@@ -141,21 +164,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         try {
             $pdo->beginTransaction();
 
+            $opId = $currentUserId;
+            if (!$opId && !empty($nik)) {
+                $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+                $uStmt->execute([$nik]);
+                $opId = $uStmt->fetchColumn() ?: 1;
+            }
+
             $act = $pdo->prepare("
-                INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-                VALUES (2, 4, ?, 'CALENDERING_PRODUCED', ?, ?)
+                INSERT INTO production_activities (
+                    barcode, dept_id, section_id, prod_date, shift, status, 
+                    qty, unit, operator_id, operator_nik, action_type, details
+                ) VALUES (
+                    ?, 2, 4, CURRENT_DATE, ?, 'NORMAL', 
+                    ?, 'ROLL', ?, ?, 'CALENDERING_PRODUCED', ?
+                )
             ");
             $act->execute([
-                $nik, 
-                "Calendering di Mesin {$machineId} | Tipe: {$materialType} | Tebal: {$thicknessMm} mm | Qty: {$rollQty} Roll | Barcode: {$barcode}",
-                'Shift ' . $shiftInfo['shift']
+                $barcode,
+                $currentShiftInt,
+                $rollQty,
+                $opId,
+                $nik,
+                "Calendering di Mesin {$machineId} | Tipe: {$materialType} | Tebal: {$thicknessMm} mm | Qty: {$rollQty} Roll | Barcode: {$barcode}"
             ]);
 
             $scada = $pdo->prepare("
-                INSERT INTO production_scada_logs (barcode, dept_id, section_id, machine_id, operator_nik, item_code, qty, quality_status, shift)
-                VALUES (?, 'MAT', 'calendery', ?, ?, ?, ?, 'PASS', ?)
+                INSERT INTO production_scada_logs (
+                    barcode, dept_id, section_id, machine_id, operator_nik, 
+                    item_code, qty, quality_status, log_date, shift, log_hour
+                ) VALUES (
+                    ?, 'MAT', 'calendery', ?, ?, 
+                    ?, ?, 'PASS', CURRENT_DATE, ?, EXTRACT(HOUR FROM CURRENT_TIME)
+                )
             ");
-            $scada->execute([$barcode, $machineId, $nik, $materialType, $rollQty, 'Shift ' . $shiftInfo['shift']]);
+            $scada->execute([$barcode, $machineId, $nik, $materialType, $rollQty, 'Shift ' . $currentShiftInt]);
 
             $pdo->commit();
             $message = "Sukses! Transaksi Calendering material {$materialType} berhasil disimpan.";
@@ -179,14 +222,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $notes = trim($_POST['notes'] ?? '');
 
     try {
+        $opId = $currentUserId;
+        if (!$opId && !empty($nik)) {
+            $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+            $uStmt->execute([$nik]);
+            $opId = $uStmt->fetchColumn() ?: 1;
+        }
+
         $act = $pdo->prepare("
-            INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-            VALUES (2, 5, ?, 'MATERIAL_DELIVERY', ?, ?)
+            INSERT INTO production_activities (
+                barcode, dept_id, section_id, prod_date, shift, status, 
+                qty, unit, operator_id, operator_nik, action_type, details
+            ) VALUES (
+                ?, 2, 5, CURRENT_DATE, ?, 'NORMAL', 
+                1, 'PALLET', ?, ?, 'MATERIAL_DELIVERY', ?
+            )
         ");
         $act->execute([
-            $nik, 
-            "Delivery Material ke {$targetDept} | Pallet/Lori: {$palletLorryId} | Barcode: {$barcode} | Catatan: {$notes}",
-            'Shift ' . $shiftInfo['shift']
+            $barcode,
+            $currentShiftInt,
+            $opId,
+            $nik,
+            "Delivery Material ke {$targetDept} | Pallet/Lori: {$palletLorryId} | Barcode: {$barcode} | Catatan: {$notes}"
         ]);
 
         $message = "Sukses! Pengiriman material ke {$targetDept} berhasil dicatat.";

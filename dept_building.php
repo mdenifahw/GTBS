@@ -104,22 +104,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             ];
             $sectionId = $sectionIdMap[$activeSize] ?? 6;
 
+            $opId = $currentUserId;
+            if (!$opId && !empty($nik)) {
+                $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+                $uStmt->execute([$nik]);
+                $opId = $uStmt->fetchColumn() ?: 1;
+            }
+
             $act = $pdo->prepare("
-                INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-                VALUES (3, ?, ?, 'BUILDING_GT_PRODUCED', ?, ?)
+                INSERT INTO production_activities (
+                    barcode, dept_id, section_id, prod_date, shift, status, 
+                    qty, unit, operator_id, operator_nik, action_type, details
+                ) VALUES (
+                    ?, 3, ?, CURRENT_DATE, ?, 'NORMAL', 
+                    1, 'Pcs', ?, ?, 'BUILDING_GT_PRODUCED', ?
+                )
             ");
             $act->execute([
+                $gtBarcode,
                 $sectionId,
+                $currentShiftInt,
+                $opId,
                 $nik, 
-                "Building Green Tire [{$activeSize}] Mesin {$machineId} | Ukuran: {$tireSize} {$tirePattern} | Barcode: {$gtBarcode} | QC: {$qualityStatus}",
-                'Shift ' . $shiftInfo['shift']
+                "Building Green Tire [{$activeSize}] Mesin {$machineId} | Ukuran: {$tireSize} {$tirePattern} | Barcode: {$gtBarcode} | QC: {$qualityStatus}"
             ]);
 
             $scada = $pdo->prepare("
-                INSERT INTO production_scada_logs (barcode, dept_id, section_id, machine_id, operator_nik, item_code, qty, quality_status, shift)
-                VALUES (?, 'BLD', ?, ?, ?, ?, 1, ?, ?)
+                INSERT INTO production_scada_logs (
+                    barcode, dept_id, section_id, machine_id, operator_nik, 
+                    item_code, qty, quality_status, log_date, shift, log_hour
+                ) VALUES (
+                    ?, 'BLD', ?, ?, ?, 
+                    ?, 1, ?, CURRENT_DATE, ?, EXTRACT(HOUR FROM CURRENT_TIME)
+                )
             ");
-            $scada->execute([$gtBarcode, 'BLD-' . $activeSize, $machineId, $nik, $tireSize, $qualityStatus, 'Shift ' . $shiftInfo['shift']]);
+            $scada->execute([$gtBarcode, 'BLD-' . $activeSize, $machineId, $nik, $tireSize, $qualityStatus, 'Shift ' . $currentShiftInt]);
 
             // Mark barcode status as ASSEMBLED
             $upBc = $pdo->prepare("UPDATE barcodes SET status = 'BUILDING_ASSEMBLED' WHERE barcode = ?");

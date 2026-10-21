@@ -111,21 +111,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         try {
             $pdo->beginTransaction();
 
+                        $opId = $currentUserId;
+            if (!$opId && !empty($nik)) {
+                $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+                $uStmt->execute([$nik]);
+                $opId = $uStmt->fetchColumn() ?: 1;
+            }
+
             $act = $pdo->prepare("
-                INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-                VALUES (4, 10, ?, 'CURING_CURE_COMPLETE', ?, ?)
+                INSERT INTO production_activities (
+                    barcode, dept_id, section_id, prod_date, shift, status, 
+                    qty, unit, operator_id, operator_nik, action_type, details
+                ) VALUES (
+                    ?, 4, 10, CURRENT_DATE, ?, 'NORMAL', 
+                    1, 'Pcs', ?, ?, 'CURING_CURE_COMPLETE', ?
+                )
             ");
             $act->execute([
+                $gtBarcode,
+                $currentShiftInt,
+                $opId,
                 $nik, 
-                "Curing Vulkanisasi di Press {$pressMachine} [Cavity {$moldCavity}] | Barcode: {$gtBarcode} | Waktu: {$curingTimeMin}m | Suhu: {$curingTempC}°C",
-                'Shift ' . $shiftInfo['shift']
+                "Curing Vulkanisasi di Press {$pressMachine} [Cavity {$moldCavity}] | Barcode: {$gtBarcode} | Waktu: {$curingTimeMin}m | Suhu: {$curingTempC}°C"
             ]);
 
             $scada = $pdo->prepare("
-                INSERT INTO production_scada_logs (barcode, dept_id, section_id, machine_id, operator_nik, item_code, qty, quality_status, shift)
-                VALUES (?, 'CUR', 'curing_tire', ?, ?, ?, 1, 'PASS', ?)
+                INSERT INTO production_scada_logs (
+                    barcode, dept_id, section_id, machine_id, operator_nik, 
+                    item_code, qty, quality_status, log_date, shift, log_hour
+                ) VALUES (
+                    ?, 'CUR', 'curing_tire', ?, ?, 
+                    ?, 1, 'PASS', CURRENT_DATE, ?, EXTRACT(HOUR FROM CURRENT_TIME)
+                )
             ");
-            $scada->execute([$gtBarcode, $pressMachine, $nik, 'CURED_TIRE', 'Shift ' . $shiftInfo['shift']]);
+            $scada->execute([$gtBarcode, $pressMachine, $nik, 'CURED_TIRE', 'Shift ' . $currentShiftInt]);
 
             // Update barcode status
             $up = $pdo->prepare("UPDATE barcodes SET status = 'CURED' WHERE barcode = ?");
@@ -149,14 +168,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $notes = trim($_POST['notes'] ?? '');
 
     try {
+                $opId = $currentUserId;
+        if (!$opId && !empty($nik)) {
+            $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+            $uStmt->execute([$nik]);
+            $opId = $uStmt->fetchColumn() ?: 1;
+        }
+
         $act = $pdo->prepare("
-            INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-            VALUES (4, 11, ?, 'SUPPLY_GT_LORY_ARRIVED', ?, ?)
+            INSERT INTO production_activities (
+                barcode, dept_id, section_id, prod_date, shift, status, 
+                qty, unit, operator_id, operator_nik, action_type, details
+            ) VALUES (
+                ?, 4, 11, CURRENT_DATE, ?, 'NORMAL', 
+                1, 'LORY', ?, ?, 'SUPPLY_GT_LORY_ARRIVED', ?
+            )
         ");
         $act->execute([
+            $lorryBarcode,
+            $currentShiftInt,
+            $opId,
             $nik, 
-            "Lori Barcode: {$lorryBarcode} tiba dan dialokasikan ke Curing Line: {$curingLineTarget}. {$notes}",
-            'Shift ' . $shiftInfo['shift']
+            "Lori Barcode: {$lorryBarcode} tiba dan dialokasikan ke Curing Line: {$curingLineTarget}. {$notes}"
         ]);
 
         $message = "Sukses! Kedatangan Lori {$lorryBarcode} di area Curing Line {$curingLineTarget} berhasil dicatat.";
@@ -183,14 +216,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ");
         $stmt->execute([$lorryId, $qtyTire, $tireSize, $nik, $notes, 'Shift ' . $shiftInfo['shift']]);
 
+                $opId = $currentUserId;
+        if (!$opId && !empty($nik)) {
+            $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+            $uStmt->execute([$nik]);
+            $opId = $uStmt->fetchColumn() ?: 1;
+        }
+
         $act = $pdo->prepare("
-            INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-            VALUES (4, 12, ?, 'GT_DELIVERY_LOADED', ?, ?)
+            INSERT INTO production_activities (
+                barcode, dept_id, section_id, prod_date, shift, status, 
+                qty, unit, operator_id, operator_nik, action_type, details
+            ) VALUES (
+                ?, 4, 12, CURRENT_DATE, ?, 'NORMAL', 
+                ?, 'Pcs', ?, ?, 'GT_DELIVERY_LOADED', ?
+            )
         ");
         $act->execute([
+            $lorryId,
+            $currentShiftInt,
+            $qtyTire,
+            $opId,
             $nik, 
-            "Loading {$qtyTire} ban ({$tireSize}) dari Building ke Lori {$lorryId}. Catatan: {$notes}",
-            'Shift ' . $shiftInfo['shift']
+            "Loading {$qtyTire} ban ({$tireSize}) dari Building ke Lori {$lorryId}. Catatan: {$notes}"
         ]);
 
         $pdo->commit();
@@ -210,14 +258,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $clampStatus = trim($_POST['clamp_status'] ?? 'OK');
 
     try {
+                $opId = $currentUserId;
+        if (!$opId && !empty($nik)) {
+            $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+            $uStmt->execute([$nik]);
+            $opId = $uStmt->fetchColumn() ?: 1;
+        }
+
         $act = $pdo->prepare("
-            INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-            VALUES (4, 13, ?, 'BLADDER_INSTALLED', ?, ?)
+            INSERT INTO production_activities (
+                barcode, dept_id, section_id, prod_date, shift, status, 
+                qty, unit, operator_id, operator_nik, action_type, details
+            ) VALUES (
+                ?, 4, 13, CURRENT_DATE, ?, 'NORMAL', 
+                1, 'BLADDER', ?, ?, 'BLADDER_INSTALLED', ?
+            )
         ");
         $act->execute([
+            $bladderBarcode,
+            $currentShiftInt,
+            $opId,
             $nik, 
-            "Pemasangan Bladder {$bladderBarcode} pada Press {$pressMachine} | Clamp Status: {$clampStatus}",
-            'Shift ' . $shiftInfo['shift']
+            "Pemasangan Bladder {$bladderBarcode} pada Press {$pressMachine} | Clamp Status: {$clampStatus}"
         ]);
 
         $message = "Sukses! Bladder {$bladderBarcode} terpasang pada Press {$pressMachine}.";
@@ -244,14 +306,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ");
         $stmt->execute([$upperRim, $lowerRim, $bladderBarcode, $nik, $notes, 'Shift ' . $shiftInfo['shift']]);
 
+                $opId = $currentUserId;
+        if (!$opId && !empty($nik)) {
+            $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+            $uStmt->execute([$nik]);
+            $opId = $uStmt->fetchColumn() ?: 1;
+        }
+
         $act = $pdo->prepare("
-            INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-            VALUES (4, 13, ?, 'BLADDER_ASSEMBLED', ?, ?)
+            INSERT INTO production_activities (
+                barcode, dept_id, section_id, prod_date, shift, status, 
+                qty, unit, operator_id, operator_nik, action_type, details
+            ) VALUES (
+                ?, 4, 13, CURRENT_DATE, ?, 'NORMAL', 
+                1, 'SET', ?, ?, 'BLADDER_ASSEMBLED', ?
+            )
         ");
         $act->execute([
+            $bladderBarcode,
+            $currentShiftInt,
+            $opId,
             $nik, 
-            "Perakitan Bladder Assembly | Upper Rim: {$upperRim} | Lower Rim: {$lowerRim} | Bladder Barcode: {$bladderBarcode}",
-            'Shift ' . $shiftInfo['shift']
+            "Perakitan Bladder Assembly | Upper Rim: {$upperRim} | Lower Rim: {$lowerRim} | Bladder Barcode: {$bladderBarcode}"
         ]);
 
         $pdo->commit();
@@ -278,14 +354,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $messageType = 'danger';
     } else {
         try {
+                        $opId = $currentUserId;
+            if (!$opId && !empty($nik)) {
+                $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+                $uStmt->execute([$nik]);
+                $opId = $uStmt->fetchColumn() ?: 1;
+            }
+
             $act = $pdo->prepare("
-                INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-                VALUES (4, 14, ?, 'BLADDER_INJECTION_PRODUCED', ?, ?)
+                INSERT INTO production_activities (
+                    barcode, dept_id, section_id, prod_date, shift, status, 
+                    qty, unit, operator_id, operator_nik, action_type, details
+                ) VALUES (
+                    ?, 4, 14, CURRENT_DATE, ?, 'NORMAL', 
+                    1, 'BLADDER', ?, ?, 'BLADDER_INJECTION_PRODUCED', ?
+                )
             ");
             $act->execute([
+                $bladderBarcode,
+                $currentShiftInt,
+                $opId,
                 $nik, 
-                "Injection Bladder Mesin {$machineId} | Ukuran: {$bladderSize} | Barcode: {$bladderBarcode}",
-                'Shift ' . $shiftInfo['shift']
+                "Injection Bladder Mesin {$machineId} | Ukuran: {$bladderSize} | Barcode: {$bladderBarcode}"
             ]);
 
             $message = "Sukses! Bladder injection {$bladderSize} ({$bladderBarcode}) berhasil dicatat.";
@@ -314,14 +404,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ");
         $stmt->execute([$mixerMachine, $compoundCode, $qtyKg, $targetMachine, $nik, $notes, 'Shift ' . $shiftInfo['shift']]);
 
+                $opId = $currentUserId;
+        if (!$opId && !empty($nik)) {
+            $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+            $uStmt->execute([$nik]);
+            $opId = $uStmt->fetchColumn() ?: 1;
+        }
+
         $act = $pdo->prepare("
-            INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-            VALUES (4, 14, ?, 'COMPOUND_REGISTERED', ?, ?)
+            INSERT INTO production_activities (
+                barcode, dept_id, section_id, prod_date, shift, status, 
+                qty, unit, operator_id, operator_nik, action_type, details
+            ) VALUES (
+                ?, 4, 14, CURRENT_DATE, ?, 'NORMAL', 
+                ?, 'KG', ?, ?, 'COMPOUND_REGISTERED', ?
+            )
         ");
         $act->execute([
+            $compoundCode,
+            $currentShiftInt,
+            $qtyKg,
+            $opId,
             $nik, 
-            "Pendaftaran Compound {$compoundCode} ({$qtyKg} Kg) dari Mixer {$mixerMachine} untuk Target Press {$targetMachine}",
-            'Shift ' . $shiftInfo['shift']
+            "Pendaftaran Compound {$compoundCode} ({$qtyKg} Kg) dari Mixer {$mixerMachine} untuk Target Press {$targetMachine}"
         ]);
 
         $pdo->commit();
@@ -342,14 +447,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $repairResult = trim($_POST['repair_result'] ?? 'REPAIRED_OK');
 
     try {
+                $opId = $currentUserId;
+        if (!$opId && !empty($nik)) {
+            $uStmt = $pdo->prepare("SELECT id FROM users WHERE nik = ? LIMIT 1");
+            $uStmt->execute([$nik]);
+            $opId = $uStmt->fetchColumn() ?: 1;
+        }
+
         $act = $pdo->prepare("
-            INSERT INTO production_activities (dept_id, section_id, operator_nik, action_type, details, shift)
-            VALUES (4, 15, ?, 'TIRE_REPAIR_PROCESSED', ?, ?)
+            INSERT INTO production_activities (
+                barcode, dept_id, section_id, prod_date, shift, status, 
+                qty, unit, operator_id, operator_nik, action_type, details
+            ) VALUES (
+                ?, 4, 15, CURRENT_DATE, ?, 'NORMAL', 
+                1, 'Pcs', ?, ?, 'TIRE_REPAIR_PROCESSED', ?
+            )
         ");
         $act->execute([
+            $tireBarcode,
+            $currentShiftInt,
+            $opId,
             $nik, 
-            "Repair Ban Barcode: {$tireBarcode} | Cacat: {$defectType} | Tindakan: {$actionTaken} | Hasil: {$repairResult}",
-            'Shift ' . $shiftInfo['shift']
+            "Repair Ban Barcode: {$tireBarcode} | Cacat: {$defectType} | Tindakan: {$actionTaken} | Hasil: {$repairResult}"
         ]);
 
         $message = "Sukses! Tindakan perbaikan ban {$tireBarcode} berhasil dicatat (Hasil: {$repairResult}).";

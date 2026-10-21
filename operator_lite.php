@@ -27,6 +27,16 @@ require_once __DIR__ . '/helpers/shift.php';
 // Wajib Login
 Auth::requireLogin();
 $user = Auth::user();
+
+// Proteksi Otorisasi Mode Lite:
+// Manajemen Pabrik & Departemen (Plant Head, Asst Plant Head, Dept Head, Asst Dept Head)
+// bertugas untuk MONITORING & PENGAWASAN, bukan penginputan transaksi lapangan.
+// Akses Mode Lite HANYA untuk Super Admin dan Operator/Leader/Section Head.
+if (in_array($user['role'] ?? '', ['plant_head', 'asst_plant_head', 'dept_head', 'asst_dept_head'])) {
+    header('Location: dashboard.php?error=' . urlencode('Akses Mode Lite Ditolak: Anda berwenang sebagai Manajemen untuk monitoring & pengawasan, bukan penginputan transaksi lapangan.'));
+    exit;
+}
+
 $shiftInfo = ShiftHelper::getShiftInfo();
 $pdo = Database::getConnection();
 
@@ -53,8 +63,8 @@ $sectionsQuery = $pdo->query("
 $userSectionCode = $user['section_code'] ?? '';
 $activeSectionCode = $_GET['section'] ?? ($userSectionCode ?: 'CUR-PRE');
 
-// Pastikan operator hanya bisa mengakses seksinya jika bukan super_admin/dept_head
-if (!in_array($user['role'] ?? '', ['super_admin', 'plant_head', 'asst_plant_head', 'dept_head'])) {
+// HANYA super_admin yang berhak berpindah stasiun penginputan secara bebas!
+if (($user['role'] ?? '') !== 'super_admin') {
     if (!empty($userSectionCode)) {
         $activeSectionCode = $userSectionCode;
     }
@@ -1011,24 +1021,27 @@ $proTargetUrl = $proUrlMap[$activeSection['dept_code'] ?? ''] ?? 'dashboard.php'
             </div>
         </div>
 
-        <!-- Pemilih Bagian / Stasiun Kerja (Khusus Super Admin & Plant Head, atau jika diizinkan) -->
-        <?php if (in_array($user['role'] ?? '', ['super_admin', 'plant_head', 'asst_plant_head', 'dept_head'])): ?>
-            <div class="station-switcher-box">
-                <label style="font-size: 12px; font-weight: 700; color: #94a3b8; white-space: nowrap;">
-                    Pilih Stasiun Penginputan:
-                </label>
-                <select onchange="window.location.href='operator_lite.php?section=' + this.value">
+        <!-- Pemilih Bagian / Stasiun Kerja (KHUSUS Super Admin) -->
+        <?php if (($user['role'] ?? '') === 'super_admin'): ?>
+            <div class="station-switcher-box" style="background: rgba(30, 41, 59, 0.95); border: 2px solid #3b82f6; border-radius: var(--radius-md); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">🏢</span>
+                    <label style="font-size: 13px; font-weight: 800; color: #93c5fd; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Pilih Stasiun Kerja (Super Admin):
+                    </label>
+                </div>
+                <select id="stationSelectDropdown" style="background: #0f172a; color: #f1f5f9; border: 1.5px solid #3b82f6; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 700; flex: 1; min-width: 280px; outline: none; cursor: pointer;" onchange="window.location.href='operator_lite.php?section=' + this.value">
                     <?php 
                     $currentDeptGroup = '';
                     foreach ($sectionsQuery as $sec): 
                         if ($sec['dept_name'] !== $currentDeptGroup) {
                             if ($currentDeptGroup !== '') echo '</optgroup>';
                             $currentDeptGroup = $sec['dept_name'];
-                            echo '<optgroup label="' . htmlspecialchars($currentDeptGroup) . '">';
+                            echo '<optgroup label="DEPT: ' . htmlspecialchars($currentDeptGroup) . '">';
                         }
                     ?>
                         <option value="<?= htmlspecialchars($sec['code']) ?>" <?= $sec['code'] === $activeSectionCode ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($sec['name']) ?> (<?= htmlspecialchars($sec['code']) ?>)
+                            [<?= htmlspecialchars($sec['dept_code']) ?>] <?= htmlspecialchars($sec['name']) ?> (<?= htmlspecialchars($sec['code']) ?>)
                         </option>
                     <?php endforeach; ?>
                     <?php if ($currentDeptGroup !== '') echo '</optgroup>'; ?>
@@ -1528,10 +1541,17 @@ $proTargetUrl = $proUrlMap[$activeSection['dept_code'] ?? ''] ?? 'dashboard.php'
             });
 
             // Kembalikan fokus ke scanner saat klik di luar input
+            // PENTING: Dikecualikan untuk SELECT, OPTION, OPTGROUP, MODAL, dll agar dropdown stasiun tidak tertutup otomatis!
             window.addEventListener('click', function(e) {
-                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') {
-                    focusScanner();
+                // Abaikan jika target klik adalah atau berada di dalam elemen interaktif non-scanner
+                if (
+                    e.target.closest('.station-switcher-box') ||
+                    e.target.closest('select') ||
+                    ['INPUT', 'SELECT', 'OPTION', 'OPTGROUP', 'BUTTON', 'A', 'TEXTAREA', 'LABEL'].includes(e.target.tagName)
+                ) {
+                    return;
                 }
+                focusScanner();
             });
         });
     </script>

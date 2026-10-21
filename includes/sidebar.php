@@ -70,8 +70,13 @@ $isOperatorUser = in_array($user['role'] ?? '', ['operator', 'leader', 'section_
 
     <!-- Daftar Navigasi Menu Sidebar -->
     <nav class="sidebar-nav">
-        <!-- SEKSI 1: MENU UTAMA -->
         <!-- PILIHAN MODE TAMPILAN: LITE (LAPANGAN) / PRO (ERP LENGKAP) -->
+        <?php 
+        // Mode Lite HANYA untuk: Super Admin (pengujian menyeluruh) & Operator/Leader/Section Head (seksi tugasnya)
+        // TIDAK DITAMPILKAN untuk Plant Head, Asst Plant Head, Dept Head, Asst Dept Head karena fungsi mereka adalah MONITORING / PENGAWASAN
+        $canAccessModeLite = in_array($user['role'] ?? '', ['super_admin', 'operator', 'leader', 'section_head']);
+        ?>
+        <?php if ($canAccessModeLite): ?>
         <div class="nav-section-title" style="display: flex; align-items: center; justify-content: space-between;">
             <span>Mode Input</span>
             <span style="font-size: 10px; background: rgba(16, 185, 129, 0.2); padding: 2px 6px; border-radius: 4px; color: #34d399; font-weight: 800;">FAST</span>
@@ -85,6 +90,7 @@ $isOperatorUser = in_array($user['role'] ?? '', ['operator', 'leader', 'section_
                 <span style="font-size: 10px; opacity: 0.8; color: #9ca3af;">Khusus Penginputan Lapangan</span>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- SEKSI 1: MENU UTAMA -->
         <div class="nav-section-title">Menu Utama</div>

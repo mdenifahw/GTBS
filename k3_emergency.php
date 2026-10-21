@@ -35,17 +35,43 @@ if (isset($_GET['sos_dispatched'])) {
 // ==============================================================================
 // BAGIAN 1: PEMROSESAN PERUBAHAN STATUS PANGGILAN AMBULANS (DISPATCHED/ARRIVED/RESOLVED)
 // ==============================================================================
-// Handle Status Update for Ambulance Call
+$messageType = 'success';
+
+// Handle Status Update for Ambulance Call ("Tiba di TKP" & "Selesai")
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_ambulance_status') {
     $callId = (int)($_POST['call_id'] ?? 0);
-    $status = $_POST['status'] ?? 'ARRIVED';
+    $status = strtoupper(trim($_POST['status'] ?? 'ARRIVED'));
 
     try {
-        $stmt = $pdo->prepare("UPDATE k3_ambulance_calls SET status = ? WHERE id = ?");
-        $stmt->execute([$status, $callId]);
-        $message = "Status panggilan darurat diperbarui menjadi: " . e($status, "ARRIVED");
+        if ($status === 'ON_SITE' || $status === 'ARRIVED') {
+            // Konfirmasi Tiba di TKP: catat waktu kedatangan & update status ke ON_SITE (sesuai constraint DB)
+            $stmt = $pdo->prepare("
+                UPDATE k3_ambulance_calls 
+                SET status = 'ON_SITE', arrival_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ");
+            $stmt->execute([$callId]);
+            $message = "Konfirmasi Berhasil: Tim Medis & Ambulans K3 telah TIBA DI TKP pada jam " . date('H:i:s') . " WIB!";
+            $messageType = 'success';
+        } elseif ($status === 'COMPLETED' || $status === 'RESOLVED' || $status === 'DONE') {
+            // Konfirmasi Selesai Penanganan
+            $stmt = $pdo->prepare("
+                UPDATE k3_ambulance_calls 
+                SET status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ");
+            $stmt->execute([$callId]);
+            $message = "Sukses: Penanganan darurat K3 pada panggilan ini telah dinyatakan SELESAI (COMPLETED)!";
+            $messageType = 'success';
+        } else {
+            $stmt = $pdo->prepare("UPDATE k3_ambulance_calls SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$status, $callId]);
+            $message = "Status panggilan darurat diperbarui menjadi: " . e($status, "ON_SITE");
+            $messageType = 'success';
+        }
     } catch (Exception $e) {
         $message = "Gagal memperbarui status: " . $e->getMessage();
+        $messageType = 'danger';
     }
 }
 
@@ -58,8 +84,9 @@ $sosCalls = $pdo->query("
 ?>
 
 <?php if (!empty($message)): ?>
-    <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; padding: 16px 20px; border-radius: 8px; margin-bottom: 24px; font-weight: 700; font-size: 14px;">
-        <?= e($message) ?>
+    <div style="background: <?= $messageType === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.2)' ?>; border: 1px solid <?= $messageType === 'success' ? '#10b981' : '#ef4444' ?>; color: <?= $messageType === 'success' ? '#34d399' : '#f87171' ?>; padding: 14px 18px; border-radius: 8px; margin-bottom: 24px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 18px;"><?= $messageType === 'success' ? '✅' : '⚠️' ?></span>
+        <span><?= e($message) ?></span>
     </div>
 <?php endif; ?>
 
@@ -127,27 +154,42 @@ $sosCalls = $pdo->query("
         <td><strong style="color: #60a5fa;"><?= e($location) ?></strong></td>
         <td style="max-width: 250px;"><?= e($notes) ?></td>
         <td>
-            <span class="badge <?= in_array($status, ['DISPATCHED', 'HIGH_EMERGENCY', 'EMERGENCY']) ? 'badge-danger' : (in_array($status, ['ARRIVED', 'REQUESTED']) ? 'badge-warning' : 'badge-success') ?>">
-                <?= e($status) ?>
-            </span>
+            <?php if (in_array($status, ['DISPATCHED', 'HIGH_EMERGENCY', 'EMERGENCY', 'REQUESTED'])): ?>
+                <span class="badge badge-danger">MENUJU TKP</span>
+            <?php elseif (in_array($status, ['ON_SITE', 'ARRIVED'])): ?>
+                <span class="badge badge-warning">TIBA DI TKP (ON SITE)</span>
+                <?php if (!empty($sc['arrival_at'])): ?>
+                    <div style="font-size: 11px; color: #fbbf24; margin-top: 4px; font-weight: 600;">
+                        ⏱️ Tiba: <?= date('H:i:s', strtotime($sc['arrival_at'])) ?> WIB
+                    </div>
+                <?php endif; ?>
+            <?php elseif (in_array($status, ['COMPLETED', 'RESOLVED', 'DONE'])): ?>
+                <span class="badge badge-success">SELESAI (COMPLETED)</span>
+            <?php else: ?>
+                <span class="badge badge-warning"><?= e($status) ?></span>
+            <?php endif; ?>
         </td>
         <td>
             <?php if (in_array($status, ['DISPATCHED', 'REQUESTED', 'HIGH_EMERGENCY', 'EMERGENCY'])): ?>
-                <form method="POST" action="k3_emergency.php" style="display: inline;">
+                <form method="POST" action="k3_emergency.php" style="display: inline;" onsubmit="return confirm('Konfirmasi bahwa tim medis/ambulans K3 telah tiba di lokasi kejadian (TKP)?');">
                     <input type="hidden" name="action" value="update_ambulance_status">
                     <input type="hidden" name="call_id" value="<?= (int)$sc['id'] ?>">
-                    <input type="hidden" name="status" value="ARRIVED">
-                    <button type="submit" class="btn btn-warning btn-sm">Tiba di TKP</button>
+                    <input type="hidden" name="status" value="ON_SITE">
+                    <button type="submit" class="btn btn-warning btn-sm" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 700; padding: 6px 12px; cursor: pointer;">
+                        <span>🚑 Tiba di TKP</span>
+                    </button>
                 </form>
-            <?php elseif ($status === 'ARRIVED'): ?>
-                <form method="POST" action="k3_emergency.php" style="display: inline;">
+            <?php elseif (in_array($status, ['ON_SITE', 'ARRIVED'])): ?>
+                <form method="POST" action="k3_emergency.php" style="display: inline;" onsubmit="return confirm('Tandai bahwa penanganan darurat K3 ini telah selesai seluruhnya?');">
                     <input type="hidden" name="action" value="update_ambulance_status">
                     <input type="hidden" name="call_id" value="<?= (int)$sc['id'] ?>">
-                    <input type="hidden" name="status" value="RESOLVED">
-                    <button type="submit" class="btn btn-success btn-sm">Insiden Selesai</button>
+                    <input type="hidden" name="status" value="COMPLETED">
+                    <button type="submit" class="btn btn-success btn-sm" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 700; padding: 6px 12px; cursor: pointer;">
+                        <span>✅ Insiden Selesai</span>
+                    </button>
                 </form>
             <?php else: ?>
-                <span style="font-size: 11.5px; color: var(--color-success); font-weight: 600;">Selesai Ditangani</span>
+                <span style="font-size: 11.5px; color: var(--color-success); font-weight: 700;">✅ Selesai Ditangani</span>
             <?php endif; ?>
         </td>
     </tr>
