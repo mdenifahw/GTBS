@@ -243,6 +243,50 @@ timeline
   - Prinsip tata kelola _Segregation of Duties (SoD)_ dan integritas data terjamin sempurna. Dashboard manajerial tetap bersih dan fokus pada fungsi monitoring dan pelaporan KPI produksi, sedangkan hak akses input terbatas eksklusif untuk operator lapangan dan Super Admin.
 
 ---
+---
+
+### Fase 13: Arsitektur Cloud Deployment (Vercel Serverless PHP) & Integrasi Cloud PostgreSQL (Supabase/Neon) untuk Ekosistem Mobile
+
+> **Metode Catatan 3W (What - Why - Wow / Result):**
+
+#### 1. Konfigurasi Deployment Serverless Vercel (`vercel.json` & `.vercelignore`)
+- **WHAT (Apa yang dikerjakan):**
+  - Membuat konfigurasi [`vercel.json`](file:///D:/laragon/www/GT_Barcode_System/vercel.json) dengan engine serverless runtime `vercel-php@0.7.2`.
+  - Mengonfigurasi rule *routing* dan *URL rewrites* bersih: aset statis (`assets/**`, `uploads/**`, favicon) di-serve langsung dengan caching cepat, sementara rute `/login`, `/dashboard`, `/operator_lite`, `/dept_*`, dan `/api/*` diteruskan ke modul PHP terkait.
+  - Membuat [`.vercelignore`](file:///D:/laragon/www/GT_Barcode_System/.vercelignore) untuk mencegah file sensitif lokal (`storage/logs/`, file backup `*.bak`, file `.bat`, git repository) terunggah ke Vercel.
+- **WHY (Mengapa dikerjakan):**
+  - Vercel secara default ditujukan untuk Node.js dan Next.js. Agar aplikasi web PHP Native pabrik dapat berjalan mulus di arsitektur serverless Vercel tanpa perlu konversi ulang bahasa, diperlukan runtime khusus dan routing table terstandarisasi.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Repositori kini siap dideploy ke Vercel hanya dengan menghubungkan repositori Git (GitHub/GitLab) tanpa setup web server manual. Performa tinggi dengan *global edge network* Vercel dan biaya operasional $0 (Tier Free).
+
+#### 2. Adaptasi Dinamis Koneksi Cloud Database (`config/database.php`)
+- **WHAT (Apa yang dikerjakan):**
+  - Memperbarui class `Database::getConnection()` agar secara cerdas mendeteksi environment variable cloud: `DATABASE_URL` / `POSTGRES_URL` (format DSN standar Supabase/Neon/Railway/Render) atau parameter terpisah (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`).
+  - Mengaktifkan enkripsi SSL otomatis (`sslmode=require`) saat terhubung ke Cloud Database.
+  - Menjaga fallback otomatis ke `127.0.0.1:5433` (dan port `5432`) jika aplikasi berjalan di lingkungan lokal offline pabrik (Laragon).
+- **WHY (Mengapa dikerjakan):**
+  - Memisahkan kredensial database dari kode sumber (*Twelve-Factor App Methodology*). Memastikan aplikasi dapat berpindah secara fleksibel dari server lokal Laragon ke Cloud Database tanpa perlu mengubah sebaris kode pun di lingkungan produksi.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Satu basis kode (*single codebase*) dapat berjalan sempurna baik di laptop lokal (offline) maupun di cloud serverless Vercel secara otomatis sesuai environment aktif.
+
+#### 3. Standardisasi Sesi Serverless (`config/app.php`)
+- **WHAT (Apa yang dikerjakan):**
+  - Menambahkan konfigurasi session path dinamis: otomatis menggunakan direktori `/tmp` yang diizinkan pada Lambda Vercel saat environment `VERCEL` terdeteksi.
+  - Memperketat atribut cookie sesi: `lifetime` 7 hari, `httponly = true`, `samesite = Lax`, dan `secure = true` jika diakses via HTTPS.
+- **WHY (Mengapa dikerjakan):**
+  - Lingkungan serverless memiliki sistem berkas *read-only* kecuali folder `/tmp`. Tanpa konfigurasi ini, sesi login PHP akan gagal tersimpan di Vercel.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Sesi login pengguna di Vercel berjalan aman, stabil, dan terhindar dari error izin tulis sistem berkas serverless.
+
+#### 4. Pembuatan Master Skema Cloud-Ready (`database/gt_tire_plant_cloud_ready.sql`)
+- **WHAT (Apa yang dikerjakan):**
+  - Menyusun berkas SQL lengkap [`database/gt_tire_plant_cloud_ready.sql`](file:///D:/laragon/www/GT_Barcode_System/database/gt_tire_plant_cloud_ready.sql) yang dilengkapi inisialisasi urutan (`CREATE SEQUENCE IF NOT EXISTS`) dan sinkronisasi otomatis counter ID (`SELECT setval(...)`) untuk 25 tabel operasional.
+- **WHY (Mengapa dikerjakan):**
+  - Pada cloud provider seperti Supabase atau Neon, fungsi `nextval('..._seq'::regclass)` pada tabel relasional akan memicu error jika sequence belum dideklarasikan sebelumnya.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Pengguna cukup menyalin isi berkas ini dan mengeklik tombol "Run" di SQL Editor Supabase / Neon, seluruh 25 tabel, constraint, foreign key, dan data awal langsung terpasang 100% tanpa error.
+
+---
 ## 3. Matriks Kesalahan dan Solusi Pencegahan (Lessons Learned)
 
 Tabel berikut wajib dipedomani dalam pengembangan fitur lanjutan agar kesalahan serupa tidak terulang kembali:
@@ -260,6 +304,8 @@ Tabel berikut wajib dipedomani dalam pengembangan fitur lanjutan agar kesalahan 
 | **9** | `SQLSTATE[23502]: Not null violation` pada `production_activities` | Skema database PostgreSQL mewajibkan `prod_date`, `shift` (integer), `status`, dan `operator_id` (integer)                            | Transaksi input seluruh departemen pabrik gagal tersimpan ke database    | **Pastikan seluruh kolom wajib (`prod_date`, integer `shift`, `status`, `operator_id`) diisi lengkap** pada setiap query `INSERT`.                 |
 | **10**| `SQLSTATE[23514]: Check violation` pada `k3_ambulance_calls`      | Check constraint PostgreSQL hanya mengizinkan status `ON_SITE` dan `COMPLETED` (bukan string sembarang seperti `ARRIVED`)              | Tombol konfirmasi "Tiba di TKP" gagal memperbarui status di database     | **Selaraskan nilai status dengan constraint skema database (`ON_SITE` untuk tiba di lokasi, `COMPLETED` untuk selesai).**                          |
 | **11**| Peran manajerial (PH, APH, DH, ADH) mengakses form input lapangan  | Tombol Mode Lite tampil di sidebar tanpa filter RBAC, dan URL `operator_lite.php` tidak memiliki pengecekan hak akses manajerial        | Pelanggaran prinsip _Segregation of Duties (SoD)_ manajer vs operator    | **Sembunyikan menu di sidebar dan pasang barikade pengalihan backend (`requireRole`)** untuk menjaga integritas pemantauan vs penginputan data.    |
+| **12**| `ERROR: relation "..._id_seq" does not exist` saat migrasi ke Cloud| Script dump PostgreSQL menggunakan `nextval()` tanpa deklarasi eksplisit `CREATE SEQUENCE` terlebih dahulu                           | Proses impor skema database di Supabase / Neon gagal di awal eksekusi     | **Deklarasikan seluruh sequence dengan `CREATE SEQUENCE IF NOT EXISTS` di baris teratas** dan jalankan `setval()` setelah data selesai di-insert. |
+| **13**| Sesi login gagal tersimpan di Vercel Serverless                     | Runtime Vercel bersifat read-only di luar direktori `/tmp` dan tidak memiliki disk persisten                                         | Pengguna langsung terlempar keluar (logout) setiap berpindah halaman     | **Arahkan `session.save_path` ke `/tmp` saat di Vercel** dan gunakan cookie dengan atribut modern (`SameSite=Lax`, `Secure`, `HttpOnly`).          |
 
 ---
 

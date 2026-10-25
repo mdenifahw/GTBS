@@ -52,3 +52,29 @@ if (!function_exists('formatDateSafe')) {
         return $ts ? date($format, $ts) : $default;
     }
 }
+
+// 5. Konfigurasi Sesi Aman & Kompatibel Serverless Cloud (Vercel)
+if (session_status() === PHP_SESSION_NONE) {
+    if (getenv('VERCEL') || !empty($_ENV['VERCEL'])) {
+        // Lingkungan Serverless Vercel menggunakan /tmp untuk session storage sementara
+        if (is_dir('/tmp') && is_writable('/tmp')) {
+            ini_set('session.save_path', '/tmp');
+        }
+    }
+    
+    // Cookie params yang aman untuk HTTPS & Browser Modern
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+            || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+    if (PHP_VERSION_ID >= 70300) {
+        session_set_cookie_params([
+            'lifetime' => 86400 * 7, // 7 hari
+            'path'     => '/',
+            'domain'   => '',
+            'secure'   => $isHttps,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+    }
+    session_start();
+}
