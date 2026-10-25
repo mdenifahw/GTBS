@@ -2,12 +2,14 @@ package com.gt.barcodesystem;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -37,9 +39,9 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "GTBS_PREFS";
     private static final String KEY_SERVER_URL = "SERVER_BASE_URL";
-    private static final String DEFAULT_EMULATOR_URL = "http://localhost:8000/GT_Barcode_System/";
-    private static final String DEFAULT_WIFI_URL = "http://192.168.1.100:8000/GT_Barcode_System/";
-    private static final String OFFLINE_ASSET_URL = "file:///android_asset/www/index.html";
+    private static final String DEFAULT_EMULATOR_URL = "http://10.0.2.2:8000/GT_Barcode_System/login.php";
+    private static final String DEFAULT_WIFI_URL = "http://192.168.1.100:8000/GT_Barcode_System/login.php";
+    private static final String OFFLINE_ASSET_URL = "file:///android_asset/www/login.html";
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -160,10 +162,21 @@ public class MainActivity extends AppCompatActivity {
         btnBannerSync.setOnClickListener(v -> triggerSync());
     }
 
+    private boolean isRunningOnEmulator() {
+        return Build.FINGERPRINT.startsWith("generic")
+                || Build.FINGERPRINT.startsWith("unknown")
+                || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("Emulator")
+                || Build.MODEL.contains("Android SDK built for x86")
+                || Build.MANUFACTURER.contains("Genymotion")
+                || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
+                || "google_sdk".equals(Build.PRODUCT);
+    }
+
     private void loadInitialUrl() {
         String savedUrl = prefs.getString(KEY_SERVER_URL, "");
         if (savedUrl.isEmpty()) {
-            savedUrl = DEFAULT_EMULATOR_URL;
+            savedUrl = isRunningOnEmulator() ? DEFAULT_EMULATOR_URL : DEFAULT_WIFI_URL;
             prefs.edit().putString(KEY_SERVER_URL, savedUrl).apply();
         }
         webView.loadUrl(savedUrl);
@@ -292,6 +305,16 @@ public class MainActivity extends AppCompatActivity {
                 "  });" +
                 "})();";
         webView.evaluateJavascript(js, null);
+    }
+
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent != null && intent.getData() != null && webView != null) {
+            webView.loadUrl(intent.getData().toString());
+        }
     }
 
     @Override

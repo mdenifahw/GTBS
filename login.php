@@ -14,13 +14,40 @@
 
 require_once __DIR__ . '/helpers/auth.php';
 
+function getRoleDestination($user) {
+    if (!$user) return 'dashboard.php';
+    $role = $user['role'] ?? '';
+    $deptCode = strtoupper($user['dept_code'] ?? '');
+    
+    // 1. Operator lapangan -> langsung menuju Mode Lite (Operator)
+    if ($role === 'operator') {
+        return 'operator_lite.php';
+    }
+    
+    // 2. Pejabat departemen spesifik -> langsung menuju halaman departemen masing-masing
+    if (in_array($role, ['dept_head', 'asst_dept_head', 'admin_dept', 'section_head', 'leader'])) {
+        switch ($deptCode) {
+            case 'WH':  return 'dept_warehouse.php';
+            case 'MAT': return 'dept_material.php';
+            case 'BLD': return 'dept_building.php';
+            case 'CUR': return 'dept_curing.php';
+            case 'FI':  return 'dept_final_inspection.php';
+        }
+    }
+    
+    // 3. Super Admin, Plant Head, Asst Plant Head -> Dashboard Utama
+    return 'dashboard.php';
+}
+
+
 $error = '';
 
 // 1. Penanganan Aksi Quick Login (Masuk Cepat Satu Klik)
 if (isset($_GET['quick_nik'])) {
     $nik = trim($_GET['quick_nik']);
     if (Auth::quickLoginByNik($nik)) {
-        header('Location: dashboard.php');
+        $target = getRoleDestination(Auth::user());
+        header('Location: ' . $target);
         exit;
     } else {
         $error = 'Akun demo (' . htmlspecialchars($nik) . ') tidak ditemukan atau tidak aktif.';
@@ -37,7 +64,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     } else {
         // Validasi kredensial melalui helper Auth::login
         if (Auth::login($username, $password)) {
-            header('Location: dashboard.php');
+            $target = getRoleDestination(Auth::user());
+            header('Location: ' . $target);
             exit;
         } else {
             $error = 'Kredensial tidak valid. Silakan periksa kembali NIK/username dan password.';
