@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ApiClient {
 
-    public static final String DEFAULT_BASE_URL = "http://10.0.2.2:8000/GT_Barcode_System/api/";
+    public static final String DEFAULT_BASE_URL = "http://10.0.2.2:8000/GT_Barcode_System/website/api/";
 
     private static Retrofit retrofit = null;
     private static String currentBaseUrl = DEFAULT_BASE_URL;

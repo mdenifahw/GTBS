@@ -39,8 +39,8 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "GTBS_PREFS";
     private static final String KEY_SERVER_URL = "SERVER_BASE_URL";
-    private static final String DEFAULT_EMULATOR_URL = "http://10.0.2.2:8000/GT_Barcode_System/login.php";
-    private static final String DEFAULT_WIFI_URL = "http://192.168.1.100:8000/GT_Barcode_System/login.php";
+    private static final String DEFAULT_EMULATOR_URL = "http://10.0.2.2:8000/GT_Barcode_System/website/login.php";
+    private static final String DEFAULT_WIFI_URL = "http://192.168.1.100:8000/GT_Barcode_System/website/login.php";
     private static final String OFFLINE_ASSET_URL = "file:///android_asset/www/login.html";
 
     private WebView webView;
