@@ -1,57 +1,52 @@
 <?php
-/**
- * ==============================================================================
- * API ENDPOINT - PELAPORAN CEPAT DOWNTIME MESIN & HAMBATAN 4M - PT GAJAH TUNGGAL TBK
- * ==============================================================================
- * Fungsi File:
- * - Endpoint RESTful JSON untuk pelaporan mesin berhenti atau kendala operasional dari client/terminal.
- * - Menerima input via HTTP POST: dept_id, machine_id, reason_category (4M), reason_description.
- * - Mengembalikan respon berformat JSON: `{"status": "success", "event_id": 123}`.
- * 
- * Panduan Pengeditan / Kustomisasi:
- * 1. Menghubungkan ke Sistem Andon Display:
- *    Respon JSON ini dapat dikonsumsi oleh layar display Andon di atas lini perakitan.
- * 2. Menambah Field Baru:
- *    Tambahkan parameter seperti `target_technician` atau `estimated_repair_time` jika diperlukan.
- * ==============================================================================
- */
-// GTBS - Quick Downtime Report API
-header('Content-Type: application/json');
-require_once __DIR__ . '/../helpers/auth.php';
+header('Content-Type: application/json; charset=UTF-8');
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../helpers/shift.php';
 
-if (!Auth::check()) {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-    exit;
-}
-
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
     exit;
 }
 
-$deptId = trim($_POST['dept_id'] ?? '');
-$machineId = trim($_POST['machine_id'] ?? '');
-$category4m = trim($_POST['category_4m'] ?? 'Machine');
-$description = trim($_POST['description'] ?? '');
-$operatorNik = trim($_POST['operator_nik'] ?? '');
+$input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
 
-if (empty($deptId) || empty($machineId) || empty($description) || empty($operatorNik)) {
-    echo json_encode(['status' => 'error', 'message' => 'Semua bidang wajib diisi']);
+$deptId = trim($input['dept_id'] ?? '1');
+$machineId = trim($input['machine_code'] ?? $input['machine_id'] ?? '');
+$category4m = trim($input['downtime_type'] ?? $input['category_4m'] ?? 'Machine');
+$description = trim($input['description'] ?? '');
+$operatorNik = trim($input['reported_by'] ?? $input['operator_nik'] ?? 'OPERATOR');
+$durationMin = (int)($input['duration_minutes'] ?? 0);
+
+if (empty($machineId) || empty($description)) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Kode mesin dan deskripsi hambatan wajib diisi.']);
     exit;
 }
 
 try {
     $pdo = Database::getConnection();
     $shiftInfo = ShiftHelper::getShiftInfo();
+    $currentShift = 'Shift ' . ($shiftInfo['shift'] ?? 1);
 
     $stmt = $pdo->prepare("
-        INSERT INTO downtime_events (dept_id, machine_id, category_4m, description, status, operator_nik, start_time, shift)
-        VALUES (?, ?, ?, ?, 'ACTIVE', ?, CURRENT_TIMESTAMP, ?)
+        INSERT INTO downtime_events (
+            dept_id, machine_id, category_4m, description, 
+            status, operator_nik, start_time, shift, duration_minutes
+        ) VALUES (
+            ?, ?, ?, ?, 
+            'ACTIVE', ?, CURRENT_TIMESTAMP, ?, ?
+        ) RETURNING id
     ");
-    $stmt->execute([$deptId, $machineId, $category4m, $description, $operatorNik, 'Shift ' . $shiftInfo['shift']]);
+    $stmt->execute([$deptId, $machineId, $category4m, $description, $operatorNik, $currentShift, $durationMin]);
+    $newId = $stmt->fetchColumn();
 
-    echo json_encode(['status' => 'success', 'message' => 'Laporan hambatan berhasil dikirim']);
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Laporan downtime mesin ' . $machineId . ' berhasil dikirim ke monitor SCADA.',
+        'event_id' => $newId
+    ]);
 } catch (Exception $e) {
+    http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }

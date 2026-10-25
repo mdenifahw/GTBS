@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_dashboard"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:title="Dashboard" />
+
+    <item
+        android:id="@+id/nav_users"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="Karyawan" />
+
+    <item
+        android:id="@+id/nav_barcodes"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Barcode" />
+
+    <item
+        android:id="@+id/nav_k3_downtime"
+        android:icon="@android:drawable/ic_dialog_alert"
+        android:title="K3 &amp; Downtime" />
+</menu>

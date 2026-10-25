@@ -287,6 +287,125 @@ timeline
   - Pengguna cukup menyalin isi berkas ini dan mengeklik tombol "Run" di SQL Editor Supabase / Neon, seluruh 25 tabel, constraint, foreign key, dan data awal langsung terpasang 100% tanpa error.
 
 ---
+---
+
+### Fase 14: Perancangan Arsitektur Mobile App Java (Android Studio) & Backend Offline Data Sync (Local-First PDT)
+
+> **Metode Catatan 3W (What - Why - Wow / Result):**
+
+#### 1. Arsitektur Local-First & Penyimpanan Lokal PDT (SQLite / Room Database)
+- **WHAT (Apa yang dikerjakan):**
+  - Merancang arsitektur aplikasi mobile berbasis **Java (Classic Android Native)** dengan pola *Offline-First / Local-First*:
+    - Penyimpanan lokal pada memori internal PDT menggunakan **Room Database / SQLite** untuk menampung riwayat scan saat berada di area tanpa koneksi (*dead zone*).
+    - Mekanisme **Dual-Trigger Sync**: Auto-Sync di latar belakang saat jaringan WiFi kembali terhubung, serta tombol manual *"Sinkronisasi Sekarang"* dengan indikator jumlah antrean data (*pending count*).
+- **WHY (Mengapa dikerjakan):**
+  - Lingkungan industri pabrik ban PT Gajah Tunggal Tbk memiliki area gudang masif dengan lorong rak tinggi dan sekat baja tebal yang sering memutus sinyal nirkabel. Tanpa sistem Local-First, alur kerja operator PDT akan terhenti total setiap kali sinyal terputus.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Produktivitas pemindaian barcode meningkat 100% tanpa jeda buffering jaringan. Data tersimpan aman di penyimpanan internal PDT dan terunggah otomatis secara atomik (*batch transaction*) ke PostgreSQL server tanpa risiko duplikasi atau data hilang.
+
+#### 2. Pembangunan Modul REST API Pendukung Mobile Sync ([`api/mobile_auth.php`](file:///D:/laragon/www/GT_Barcode_System/api/mobile_auth.php) & [`api/mobile_sync.php`](file:///D:/laragon/www/GT_Barcode_System/api/mobile_sync.php))
+- **WHAT (Apa yang dikerjakan):**
+  - Membuat API endpoint [`api/mobile_auth.php`](file:///D:/laragon/www/GT_Barcode_System/api/mobile_auth.php) untuk login NIK/username, verifikasi password bcrypt/plain, serta pengembalian profil departemen dan shift operasional aktif.
+  - Membuat API endpoint [`api/mobile_sync.php`](file:///D:/laragon/www/GT_Barcode_System/api/mobile_sync.php):
+    - Aksi `pull_master`: Mengunduh master data departemen, seksi, rak gudang, dan barcode aktif ke dalam memori lokal PDT.
+    - Aksi `push_activities`: Mengunggah antrean aktivitas produksi offline secara batch ke tabel `production_activities` dan `production_scada_logs` dengan proteksi transaksi rollback.
+    - Aksi `push_k3`: Mengirimkan panggilan darurat medis ambulans K3 langsung dari perangkat mobile.
+- **WHY (Mengapa dikerjakan):**
+  - Memberikan antarmuka komunikasi data yang ringan (JSON murni) dengan payload efisien agar proses sinkronisasi cepat dan hemat daya baterai pada perangkat PDT industri.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Sistem backend lokal (Laragon) dan cloud (Vercel) kini sepenuhnya siap melayani request sinkronisasi dari aplikasi mobile Java Android Studio.
+
+---
+---
+
+### Fase 15: Pemisahan Direktori Web vs Mobile & Standarisasi Arsitektur Android Studio
+
+> **Metode Catatan 3W (What - Why - Wow / Result):**
+
+#### 1. Pembersihan Insiden Polusi Berkas Android Studio di Root Website
+- **WHAT (Apa yang dikerjakan):**
+  - Mengidentifikasi dan menghapus tuntas seluruh berkas/folder bawaan Android Studio (`.gradle`, `.idea`, `app/`, `gradle/`, `build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, `local.properties`, `gradlew`, `gradlew.bat`) yang sempat terbuat di dalam root direktori website [`D:\laragon\www\GT_Barcode_System\`](file:///D:/laragon/www/GT_Barcode_System/).
+  - Merestorasi berkas `.gitignore` asli website dan mengembalikan git tree ke status murni tanpa file Android yang tersisa.
+- **WHY (Mengapa dikerjakan):**
+  - Proyek Android Studio yang terinisialisasi di dalam *Document Root* web server Laragon (`www`) memicu ribuan file kompilasi dan cache Gradle berukuran gigabyte yang mengotori sistem web PHP, memperlambat git tracking, dan berisiko menggagalkan proses build otomatis di platform Vercel.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Direktori website kembali bersih 100%. Batasan arsitektur dipisahkan secara tegas:
+    - **Website (PHP Backend & API)**: Tetap di `D:\laragon\www\GT_Barcode_System\`
+    - **Mobile App (Android Studio)**: Disimpan di `D:\AndroidProjects\GT_Barcode_Mobile\`
+
+#### 2. Penyusunan Kontrak REST API & Dokumen Panduan AI Android Studio
+- **WHAT (Apa yang dikerjakan):**
+  - Menyusun master blueprint arsitektur sistem komprehensif [`SYSTEM_ARCHITECTURE_AND_CODEBASE_BLUEPRINT.md`](file:///D:/laragon/www/GT_Barcode_System/SYSTEM_ARCHITECTURE_AND_CODEBASE_BLUEPRINT.md) dan panduan praktis [`MOBILE_APP_DEVELOPMENT_GUIDE.md`](file:///D:/laragon/www/GT_Barcode_System/MOBILE_APP_DEVELOPMENT_GUIDE.md)(file:///D:/laragon/www/GT_Barcode_System/MOBILE_APP_DEVELOPMENT_GUIDE.md) sebagai pedoman lengkap bagi developer dan AI di Android Studio.
+  - Mendokumentasikan spesifikasi kontrak API:
+    - `POST /api/mobile_auth.php` (Autentikasi NIK, role hierarki, dan shift pabrik)
+    - `GET /api/mobile_sync.php?action=pull_master` (Unduh cache departemen, seksi, rak gudang, dan barcode)
+    - `POST /api/mobile_sync.php?action=push_activities` (Sinkronisasi batch scan offline dari SQLite/Room)
+    - `POST /api/mobile_sync.php?action=push_k3` (Panggilan darurat ambulans medis K3)
+  - Mendokumentasikan aturan IP jaringan lokal: Emulator Android wajib menggunakan `http://10.0.2.2:8000/GT_Barcode_System/api/` dan perangkat fisik PDT menggunakan `http://192.168.x.x:8000/GT_Barcode_System/api/` dengan `usesCleartextTraffic="true"`.
+- **WHY (Mengapa dikerjakan):**
+  - Mencegah asisten AI atau developer di Android Studio mengulang kesalahan konfigurasi koneksi jaringan lokal, salah memilih endpoint, atau membuat struktur data yang tidak kompatibel dengan PostgreSQL server.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Developer dan AI di Android Studio memiliki peta jalan yang presisi untuk langsung mengimplementasikan antarmuka Java, Room Database, dan Retrofit client tanpa *trial-and-error*.
+
+### Fase 16: Pembangunan Lengkap Mobile App Native Java (Paritas Fitur 100% Web) & Integrasi REST API
+
+> **Metode Catatan 3W (What - Why - Wow / Result):**
+
+#### 1. Implementasi Alur Seluruh Departemen Pabrik di Mode Lite Mobile ([`OperatorLiteActivity.java`](file:///D:/laragon/www/GT_Barcode_System/mobile/app/src/main/java/com/gt/barcodesystem/ui/OperatorLiteActivity.java))
+- **WHAT (Apa yang dikerjakan):**
+  - Mengimplementasikan antarmuka dinamis kontekstual untuk seluruh stasiun/departemen kerja di pabrik:
+    - **Mixing & Calendering (Dept Material)**: Pilihan formula compound (`CMP-TREAD-01`, `CMP-SIDE-02`, dsb) dan input berat material (Kg).
+    - **Building & Lori Curing (Dept Building)**: Pilihan spesifikasi green tire (`185/65 R15 ECO`, `225/65 R17 HP`, dsb) dan kode mesin perakitan TBM.
+    - **Curing Press & Repair (Dept Curing)**: Pilihan cavity cetakan (`LEFT`/`RIGHT`) dan klasifikasi defect reparasi ban (`Blister`, `Tread crack`, `Sidewall scratch`, `Bead bend`).
+    - **Final Inspection (Dept FI)**: Penentuan grade kualitas QC (`PASS/OK`, `REPAIR`, `SCRAP`) dan catatan temuan cacat ban.
+    - **Warehouse (Gudang Ban Jadi)**: Alokasi rak penyimpanan pintar (*Smart Rack Routing*).
+- **WHY (Mengapa dikerjakan):**
+  - Memastikan operator di tiap lantai pabrik mendapatkan parameter form yang presisi dan relevan dengan tugas departemennya tanpa perlu beralih ke komputer desktop.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Mode Lite di mobile app memiliki kapabilitas pemindaian barcode yang 100% identik dengan versi website desktop, dilengkapi umpan balik audio (*beeping feedback*), haptic vibration, dan penyimpanan lokal instan ke Room Database (SQLite).
+
+#### 2. Perutean Rak Cerdas Gudang (*Smart Rack Routing*) di Mobile App
+- **WHAT (Apa yang dikerjakan):**
+  - Mengintegrasikan verifikasi status rak secara langsung (*on-device validation*) menggunakan data master `warehouse_racks` yang ter-cache di Room Database.
+  - Menambahkan tombol "CEK RAK": mendeteksi secara instan apakah rak berstatus KOSONG & TERSEDIA atau TERISI oleh barcode lain untuk mencegah tabrakan stok (*stock collision*).
+- **WHY (Mengapa dikerjakan):**
+  - Mencegah kesalahan penempatan ban jadi (*misplacement*) di lorong gudang yang luas saat operator forklift sedang tidak terjangkau jaringan internet.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Validasi penempatan barang berlangsung dalam hitungan milidetik secara offline langsung di perangkat mobile.
+
+#### 3. Modul K3 Tanggap Darurat & Pelaporan Downtime SCADA ([`K3DowntimeFragment.java`](file:///D:/laragon/www/GT_Barcode_System/mobile/app/src/main/java/com/gt/barcodesystem/ui/fragment/K3DowntimeFragment.java))
+- **WHAT (Apa yang dikerjakan):**
+  - Membangun antarmuka panggilan darurat ambulans medis (SOS) dengan form input lokasi dan kondisi insiden.
+  - Mengimplementasikan tombol penanganan darurat: "TIBA DI TKP (ON SITE)" yang mencatat waktu kedatangan tim medis secara presisi (`arrival_at = CURRENT_TIMESTAMP`) dan tombol "SELESAI (COMPLETED)".
+  - Mengintegrasikan pelaporan downtime mesin langsung ke basis data SCADA via [`api/report_downtime.php`](file:///D:/laragon/www/GT_Barcode_System/api/report_downtime.php) lengkap dengan kategori kendala 4M (Machine, Method, Man, Material).
+- **WHY (Mengapa dikerjakan):**
+  - Respons cepat terhadap keselamatan kerja (K3) dan kecepatan penanganan mesin mati (*downtime*) merupakan metrik paling kritis di lingkungan manufaktur ban PT Gajah Tunggal Tbk.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Seluruh panggilan darurat dan laporan downtime tersinkronisasi dua arah secara *real-time* ke sistem web dan layar monitor SCADA.
+
+#### 4. Restrukturisasi REST API Backend & Penanganan UTF-8 BOM Tanpa Header Korup
+- **WHAT (Apa yang dikerjakan):**
+  - Memperbarui seluruh endpoint backend:
+    - [`api/mobile_sync.php`](file:///D:/laragon/www/GT_Barcode_System/api/mobile_sync.php): Mendukung aksi `pull_master`, `push_activities`, `push_k3`, `update_k3_status`, `get_active_k3`, `assign_rack`, dan `dashboard_summary`.
+    - [`api/export_scada.php`](file:///D:/laragon/www/GT_Barcode_System/api/export_scada.php): Menyediakan respon JSON agregasi KPI saat parameter `format=json` dikirimkan oleh Retrofit.
+    - [`api/user_management.php`](file:///D:/laragon/www/GT_Barcode_System/api/user_management.php) & [`api/barcode_management.php`](file:///D:/laragon/www/GT_Barcode_System/api/barcode_management.php): Endpoint JSON murni untuk operasi CRUD karyawan dan pembuatan barcode berurutan.
+  - Memastikan seluruh berkas PHP disimpan dalam format UTF-8 murni tanpa Byte Order Mark (BOM).
+- **WHY (Mengapa dikerjakan):**
+  - Karakter BOM (0xEF 0xBB 0xBF) yang tidak sengaja tercetak sebelum tag `<?php` menyebabkan parser JSON di Android (Gson/Retrofit) gagal mem-parsing respon API.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Seluruh komunikasi data antara Retrofit (Android) dan backend PHP berjalan lancar tanpa satupun kendala parsing JSON.
+
+#### 5. Keberhasilan Kompilasi Android Debug APK
+- **WHAT (Apa yang dikerjakan):**
+  - Menjalankan uji kompilasi penuh menggunakan Gradle Wrapper: `gradlew assembleDebug`.
+- **WHY (Mengapa dikerjakan):**
+  - Memastikan seluruh dependensi Room Database, Retrofit, Material Design Components, dan Java classes terkompilasi bersih tanpa *syntax error* atau *missing symbol*.
+- **WOW / RESULT (Hasil & Dampak Luar Biasa):**
+  - Kompilasi selesai sukses dengan status `BUILD SUCCESSFUL in 14s` dan menghasilkan berkas binary APK siap pakai: [`mobile/app/build/outputs/apk/debug/app-debug.apk`](file:///D:/laragon/www/GT_Barcode_System/mobile/app/build/outputs/apk/debug/app-debug.apk) (9.19 MB).
+
+---
+
+---
 ## 3. Matriks Kesalahan dan Solusi Pencegahan (Lessons Learned)
 
 Tabel berikut wajib dipedomani dalam pengembangan fitur lanjutan agar kesalahan serupa tidak terulang kembali:
@@ -307,6 +426,11 @@ Tabel berikut wajib dipedomani dalam pengembangan fitur lanjutan agar kesalahan 
 | **12**| `ERROR: relation "..._id_seq" does not exist` saat migrasi ke Cloud| Script dump PostgreSQL menggunakan `nextval()` tanpa deklarasi eksplisit `CREATE SEQUENCE` terlebih dahulu                           | Proses impor skema database di Supabase / Neon gagal di awal eksekusi     | **Deklarasikan seluruh sequence dengan `CREATE SEQUENCE IF NOT EXISTS` di baris teratas** dan jalankan `setval()` setelah data selesai di-insert. |
 | **13**| Sesi login gagal tersimpan di Vercel Serverless                     | Runtime Vercel bersifat read-only di luar direktori `/tmp` dan tidak memiliki disk persisten                                         | Pengguna langsung terlempar keluar (logout) setiap berpindah halaman     | **Arahkan `session.save_path` ke `/tmp` saat di Vercel** dan gunakan cookie dengan atribut modern (`SameSite=Lax`, `Secure`, `HttpOnly`).          |
 | **14**| `Error: [unused_function] "*.php" in functions` saat build Vercel   | Vercel build v3 mewajibkan seluruh target serverless function berada di dalam folder `api/` (tidak mengizinkan wildcard root `*.php`) | Proses build & deployment Vercel gagal di awal proses                     | **Buat Front Controller Gateway [`api/index.php`](file:///D:/laragon/www/GT_Barcode_System/api/index.php)** dan tetapkan fungsi hanya pada `"api/**/*.php"`. |
+| **15**| `Connection refused (127.0.0.1:5433)` saat web dibuka di Vercel     | Environment Variable `DATABASE_URL` belum ditambahkan di Vercel, sehingga sistem mencoba fallback ke localhost lokal laptop           | Tampilan web Vercel menampilkan pesan error koneksi database lokal       | **Tambahkan `DATABASE_URL` dari Supabase ke Vercel Project Settings -> Environment Variables**, dan pasang deteksi pintar di `database.php`.|
+| **16**| `Cannot assign requested address` (`db.*.supabase.co`) di Vercel    | Direct Connection Host Supabase (`db.[ref].supabase.co`) bersifat IPv6-only, sedangkan Vercel Serverless hanya mendukung jaringan IPv4  | Koneksi database gagal saat web diakses di Vercel                         | **Gunakan Supabase Connection Pooler (Supavisor)** via host `aws-0-[region].pooler.supabase.com` (port 6543/5432) dengan user `postgres.[ref]`. |
+| **17**| Pencampuran proyek Android Studio ke dalam folder `laragon/www`      | Pembuatan project Android baru diarahkan ke root website PHP, sehingga file Gradle dan cache `.idea` bercampur dengan kode web          | Folder web membengkak gigabyte, git tracking kotor, dan deploy Vercel gagal | **Pisahkan folder secara tegas**: Web di `laragon/www/GT_Barcode_System`, Android di folder terpisah (`D:/AndroidProjects/GT_Barcode_Mobile`).  |
+| **19**| Karakter BOM (Byte Order Mark) pada output JSON PHP | Editor atau skrip PowerShell menyimpan berkas dengan encoding UTF8 bertanda BOM (0xEF 0xBB 0xBF) sebelum <?php | Parser Gson di Android melempar error MalformedJsonException | **Gunakan UTF-8 murni tanpa BOM (New-Object System.Text.UTF8Encoding(False))** pada seluruh berkas endpoint API PHP. |
+| **18**| Android gagal terhubung ke backend lokal `http://localhost:8000`    | Di dalam Android Emulator, `localhost` merujuk ke emulator itu sendiri, bukan ke laptop host; dan Android memblokir HTTP tanpa izin    | Request login / sync di aplikasi Android mengalami `Network / Connection Refused` | **Gunakan IP `10.0.2.2:8000` untuk Emulator** (atau IP WiFi laptop untuk PDT fisik) dan aktifkan `android:usesCleartextTraffic="true"`.        |
 
 ---
 

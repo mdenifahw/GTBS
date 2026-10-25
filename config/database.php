@@ -58,16 +58,23 @@ class Database {
                 $dsn = "pgsql:host={$host};port={$port};dbname={$dbname};sslmode={$sslMode}";
 
                 try {
+                    // Jika menggunakan Supabase Pooler (port 6543 / pooler.supabase.com), aktifkan emulate prepares
+                    $isPooler = ($port == 6543 || strpos($host, 'pooler.supabase.com') !== false);
+
                     self::$instance = new PDO($dsn, $user, $password, [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                        PDO::ATTR_EMULATE_PREPARES => false
+                        PDO::ATTR_EMULATE_PREPARES => $isPooler ? true : false
                     ]);
                     return self::$instance;
                 } catch (PDOException $e) {
+                    $extraHint = '';
+                    if (strpos($host, 'supabase.co') !== false && strpos($host, 'pooler.supabase.com') === false) {
+                        $extraHint = ' | PENYEBAB & SOLUSI: Anda menggunakan Direct Host (' . $host . ') yang merupakan IPv6-only. Vercel Serverless hanya mendukung IPv4. Silakan gunakan Connection Pooler Supabase (host: aws-0-[region].pooler.supabase.com pada port 6543 atau 5432).';
+                    }
                     die(json_encode([
                         'status' => 'error',
-                        'message' => 'Koneksi Cloud PostgreSQL (DATABASE_URL) gagal: ' . $e->getMessage()
+                        'message' => 'Koneksi Cloud PostgreSQL (DATABASE_URL) gagal: ' . $e->getMessage() . $extraHint
                     ]));
                 }
             }
@@ -101,6 +108,14 @@ class Database {
                     'message' => 'Koneksi Cloud PostgreSQL (DB_HOST) gagal: ' . $e->getMessage()
                 ]));
             }
+        }
+
+        // Jika berjalan di Vercel Cloud tapi belum diset DATABASE_URL
+        if (getenv('VERCEL') || !empty($_ENV['VERCEL'])) {
+            die(json_encode([
+                'status' => 'error',
+                'message' => 'Konfigurasi Database Cloud Belum Terpasang: Website berhasil aktif di Vercel, namun Anda belum menambahkan Environment Variable "DATABASE_URL" di Dashboard Vercel. Silakan buat database di Supabase/Neon, salin Connection String (URI), lalu tambahkan ke Vercel Project Settings -> Environment Variables.'
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         }
 
         // 3. Fallback Lingkungan Lokal (Port 5433 Runner / Port 5432 Laragon)

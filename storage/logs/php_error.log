@@ -42,3 +42,15 @@ Stack trace:
 #0 {main}
   thrown in C:\Users\M Denifah Wirayudha\.gemini\antigravity-ide\brain\ad388797-146b-4a27-b338-e7234a21f7e8\scratch\test_system_fixes.php on line 6
 [21-Oct-2026 20:51:07 Asia/Jakarta] PHP Warning:  Undefined variable $pdo in C:\Users\M Denifah Wirayudha\.gemini\antigravity-ide\brain\ad388797-146b-4a27-b338-e7234a21f7e8\scratch\debug_db.php on line 10
+[25-Oct-2026 12:55:25 Asia/Jakarta] PHP Warning:  Undefined array key "password" in D:\laragon\www\GT_Barcode_System\api\mobile_auth.php on line 43
+[25-Oct-2026 12:55:25 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to undefined function getShiftInfo() in D:\laragon\www\GT_Barcode_System\api\mobile_auth.php:58
+Stack trace:
+#0 C:\Users\M Denifah Wirayudha\.gemini\antigravity-ide\brain\ad388797-146b-4a27-b338-e7234a21f7e8\scratch\test_mobile_auth.php(7): require()
+#1 {main}
+  thrown in D:\laragon\www\GT_Barcode_System\api\mobile_auth.php on line 58
+[25-Oct-2026 12:55:45 Asia/Jakarta] PHP Warning:  Undefined array key "password" in D:\laragon\www\GT_Barcode_System\api\mobile_auth.php on line 43
+[25-Oct-2026 12:55:45 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to undefined function getShiftInfo() in D:\laragon\www\GT_Barcode_System\api\mobile_auth.php:58
+Stack trace:
+#0 C:\Users\M Denifah Wirayudha\.gemini\antigravity-ide\brain\ad388797-146b-4a27-b338-e7234a21f7e8\scratch\test_mobile_auth_debug.php(9): require()
+#1 {main}
+  thrown in D:\laragon\www\GT_Barcode_System\api\mobile_auth.php on line 58
