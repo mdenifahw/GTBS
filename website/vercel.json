@@ -8,19 +8,39 @@
     "routes": [
         {
             "src": "/assets/(.*)",
-            "dest": "/assets/$1"
+            "dest": "/website/assets/$1"
         },
         {
             "src": "/uploads/(.*)",
-            "dest": "/uploads/$1"
+            "dest": "/website/storage/uploads/$1"
         },
         {
             "src": "/favicon.ico",
-            "dest": "/assets/img/Logo_Aplikasi.png"
+            "dest": "/website/assets/img/Logo_Aplikasi.png"
+        },
+        {
+            "src": "/website/assets/(.*)",
+            "dest": "/website/assets/$1"
+        },
+        {
+            "src": "/website/uploads/(.*)",
+            "dest": "/website/storage/uploads/$1"
+        },
+        {
+            "src": "/api/mobile_sync.php",
+            "dest": "/api/mobile_sync.php"
         },
         {
             "src": "/api/(.*)",
-            "dest": "/api/$1"
+            "dest": "/api/index.php"
+        },
+        {
+            "src": "/website/api/(.*)",
+            "dest": "/api/index.php"
+        },
+        {
+            "src": "/website/(.*)",
+            "dest": "/api/index.php"
         },
         {
             "src": "/(.*)",

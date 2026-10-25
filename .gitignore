@@ -1,0 +1,24 @@
+# Logs
+storage/logs/*.log
+website/storage/logs/*.log
+*.log
+
+# Backup files
+*.bak
+*.tmp
+
+# Environment & Local secrets
+.env
+local.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Mobile Android Caches & Builds
+mobile/.gradle/
+mobile/.idea/
+mobile/**/build/
+mobile/local.properties
+mobile/app/build/
+mobile/app/.cxx/

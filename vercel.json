@@ -1,0 +1,50 @@
+{
+    "version": 2,
+    "functions": {
+        "api/**/*.php": {
+            "runtime": "vercel-php@0.7.2"
+        }
+    },
+    "routes": [
+        {
+            "src": "/assets/(.*)",
+            "dest": "/website/assets/$1"
+        },
+        {
+            "src": "/uploads/(.*)",
+            "dest": "/website/storage/uploads/$1"
+        },
+        {
+            "src": "/favicon.ico",
+            "dest": "/website/assets/img/Logo_Aplikasi.png"
+        },
+        {
+            "src": "/website/assets/(.*)",
+            "dest": "/website/assets/$1"
+        },
+        {
+            "src": "/website/uploads/(.*)",
+            "dest": "/website/storage/uploads/$1"
+        },
+        {
+            "src": "/api/mobile_sync.php",
+            "dest": "/api/mobile_sync.php"
+        },
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/index.php"
+        },
+        {
+            "src": "/website/api/(.*)",
+            "dest": "/api/index.php"
+        },
+        {
+            "src": "/website/(.*)",
+            "dest": "/api/index.php"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/api/index.php"
+        }
+    ]
+}

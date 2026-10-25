@@ -1,0 +1,9 @@
+.git
+.github
+*.bat
+storage/logs/*.log
+*.bak
+database/*.sql.gz
+mobile/
+.idea/
+.gradle/

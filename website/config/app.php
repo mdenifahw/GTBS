@@ -18,7 +18,7 @@ ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 ini_set('log_errors', '1');
 
-$logFile = dirname(__DIR__) . '/storage/logs/php_error.log';
+$logFile = (getenv('VERCEL') || !empty($_ENV['VERCEL'])) ? '/tmp/php_error.log' : dirname(__DIR__) . '/storage/logs/php_error.log';
 ini_set('error_log', $logFile);
 
 // 3. Helper Keamanan HTML Escaping Bebas Deprecated Warning (Mendukung PHP 8.1 - 8.5+)
