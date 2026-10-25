@@ -469,3 +469,31 @@ Untuk mengakses website dari HP di luar jaringan WiFi lokal:
 
 _Dokumen ini dibuat otomatis sebagai acuan resmi arsitektur dan pemeliharaan jangka panjang GT Barcode System._
 
+
+---
+
+### Fase 17: Transformasi Total Mobile App — Hybrid Native Container & Local-First Offline Room DB Sync
+- **Tanggal:** 25 Oktober 2026
+- **Status:** SELESAI (100% Sempurna)
+
+#### 1. What (Apa yang Dikerjakan):
+1. **Arsitektur Hybrid Native Container:**
+   - Mentransformasi aplikasi mobile Android (`com.gt.barcodesystem`) menjadi **Hybrid Native Container** canggih berbasis WebView terakselerasi perangkat keras dengan jembatan komunikasi JavaScript Bridge ganda (`AndroidPDT`).
+   - Menyajikan 100% tampilan, desain visual, interaksi, palet warna *Cyber-Industrial Dark Theme* (`#0b0f19`), header, live clock, sidebar, dan fitur identik dengan Web Application tanpa perbedaan visual sedikit pun.
+2. **Local-First & Offline Data Sync Engine (Room DB):**
+   - Mengintegrasikan SQLite Room Database lokal (`offline_scans`) pada PDT/perangkat mobile.
+   - Menyematkan cermin offline lokal (`file:///android_asset/www/index.html` dan `style.css`) ke dalam bundle APK.
+   - Menghubungkan form input dengan `window.AndroidPDT.saveOfflineScan()` sehingga saat operator berada di area *dead zone* / tanpa sinyal Wi-Fi, data input langsung tersimpan di memori lokal PDT secara aman dan instan dengan audio beep chime & vibrasi haptik.
+   - Mengimplementasikan `ConnectivityManager.NetworkCallback` dan `SyncManager` untuk otomatis mengirim data tertunda ke `api/mobile_sync.php` begitu perangkat kembali terhubung ke jaringan.
+3. **Konfigurasi Akses Jaringan & Port Forwarding:**
+   - Membuka pembatasan akses Nginx agar dapat diakses oleh emulator (`10.0.2.2` / `localhost` via ADB reverse) dan perangkat fisik (seperti iQOO Z10R via Wi-Fi `192.168.1.100:8000`).
+   - Menyediakan tombol floating konfigurasi server (`fabSettings`) di pojok kanan bawah untuk kemudahan beralih URL server secara dinamis.
+
+#### 2. Why (Mengapa Hal Ini Dikerjakan):
+- Pengguna menginginkan mobile app memiliki tampilan (UI/UX) dan fitur yang **100% sama persis dengan web app** tanpa ada perbedaan, dengan satu-satunya nilai tambah eksklusif mobile adalah **Offline Data Sync / Local-First Storage** untuk operator lapangan PDT saat berada di area tanpa sinyal pabrik.
+- Pendekatan native XML terpisah menghasilkan disparitas visual yang signifikan dan memerlukan pemeliharaan ganda pada 15+ halaman kompleks, sedangkan arsitektur Hybrid Native Container memberikan kesetaraan 1:1 langsung dari sumber web sekaligus mempertahankan performa native untuk database offline dan hardware scanner.
+
+#### 3. Wow (Hasil & Nilai Tambah yang Dicapai):
+- **1:1 Visual Parity:** Layar Login, Dashboard Utama (4 kartu KPI, tabel shift global, tombol darurat K3), Sidebar Navigasi (5 departemen manufaktur, SCADA, Kelola Karyawan), dan Mode Lite Operator tampil 100% presisi dan memukau di layar mobile.
+- **Zero Data Loss:** Penginputan barcode saat offline otomatis tersimpan ke Room Database lokal dengan counter pending badge yang realtime.
+- **Seamless Auto-Sync:** Begitu koneksi pulih, data offline otomatis tersinkronisasi ke server pusat PostgreSQL tanpa memerlukan input ulang dari operator.

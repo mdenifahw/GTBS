@@ -1,0 +1,366 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GTBS - Mode Offline PDT (Local Room DB)</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f9fafb;
+            padding: 12px;
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .offline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111827;
+            border: 1px solid #1f2937;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        .offline-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #38bdf8;
+            letter-spacing: 0.5px;
+        }
+        .offline-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .pdt-card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .pdt-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .pdt-select, .pdt-input {
+            width: 100%;
+            background: #1e293b;
+            border: 1.5px solid #334155;
+            color: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .pdt-select:focus, .pdt-input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+        .pdt-scan-box {
+            border: 2px solid #2563eb;
+            background: rgba(37, 99, 235, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .pdt-scan-input {
+            width: 100%;
+            background: #0f172a;
+            border: 2px solid #38bdf8;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 800;
+            padding: 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .btn-action-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-pdt-submit {
+            flex: 2;
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .btn-pdt-sync {
+            flex: 1;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1.5px solid #10b981;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .history-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-bc {
+            font-size: 13px;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+        .history-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .badge-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP HEADER -->
+    <div class="offline-header">
+        <div>
+            <div class="offline-title">🏭 GTBS &bull; MODE OFFLINE PDT</div>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Penyimpanan Lokal: SQLite Room Database</div>
+        </div>
+        <div class="offline-badge" id="badgePendingCount">PENDING: 0</div>
+    </div>
+
+    <!-- STATION SELECTOR -->
+    <div class="pdt-card">
+        <div class="pdt-label">PILIH STASIUN KERJA DEPARTEMEN</div>
+        <select class="pdt-select" id="selStation" onchange="switchStationUI()">
+            <option value="MIXING_PRODUCED">MIXING (Dept Material)</option>
+            <option value="CALENDERING_PRODUCED">CALENDERING (Dept Material)</option>
+            <option value="BUILDING_GT_PRODUCED">BUILDING_GT (Dept Building)</option>
+            <option value="LORI_CURING_TRANSFER">LORI_CURING (Dept Building)</option>
+            <option value="CURING_PRESS_CURED">CURING_PRESS (Dept Curing)</option>
+            <option value="TIRE_REPAIRED">REPAIR (Dept Curing)</option>
+            <option value="FINAL_INSPECTION_RECORDED">FINAL_INSPECTION (Dept FI)</option>
+            <option value="WAREHOUSE_STORED">WAREHOUSE (Gudang Ban Jadi)</option>
+        </select>
+    </div>
+
+    <!-- CONTEXTUAL PARAMETERS -->
+    <div class="pdt-card" id="cardParams">
+        <div class="pdt-label" id="lblParamTitle">PARAMETER MATERIAL</div>
+        
+        <!-- Mixing / Calendering -->
+        <div id="grpMaterial" style="display: flex; gap: 8px;">
+            <select class="pdt-select" id="selCompound" style="flex: 2;">
+                <option value="CMP-TREAD-01">CMP-TREAD-01 (Tread PCR)</option>
+                <option value="CMP-SIDE-02">CMP-SIDE-02 (Sidewall)</option>
+                <option value="CMP-BASE-01">CMP-BASE-01 (Base)</option>
+                <option value="CMP-TBR-01">CMP-TBR-01 (Truck/Bus)</option>
+            </select>
+            <input type="number" step="0.1" class="pdt-input" id="inpWeight" placeholder="Kg" value="50.0" style="flex: 1;">
+        </div>
+
+        <!-- Building GT -->
+        <div id="grpBuilding" style="display: none; gap: 8px;">
+            <select class="pdt-select" id="selSpec" style="flex: 2;">
+                <option value="185/65 R15 ECO">185/65 R15 ECO</option>
+                <option value="225/65 R17 HP">225/65 R17 HP</option>
+                <option value="195/75 R16C LTR">195/75 R16C LTR</option>
+            </select>
+            <input type="text" class="pdt-input" id="inpMachine" placeholder="Mesin" value="TBM-01" style="flex: 1;">
+        </div>
+
+        <!-- Curing -->
+        <div id="grpCuring" style="display: none; gap: 8px;">
+            <select class="pdt-select" id="selCavity" style="flex: 1;">
+                <option value="LEFT">Cavity LEFT (Kiri)</option>
+                <option value="RIGHT">Cavity RIGHT (Kanan)</option>
+            </select>
+            <select class="pdt-select" id="selDefect" style="flex: 1;">
+                <option value="None">None (Normal)</option>
+                <option value="Blister">Blister</option>
+                <option value="Tread crack">Tread crack</option>
+            </select>
+        </div>
+
+        <!-- Final Inspection -->
+        <div id="grpInspection" style="display: none; gap: 8px;">
+            <select class="pdt-select" id="selQcGrade" style="flex: 1;">
+                <option value="PASS">PASS (Lolos QC)</option>
+                <option value="REPAIR">REPAIR</option>
+                <option value="SCRAP">SCRAP</option>
+            </select>
+            <input type="text" class="pdt-input" id="inpDefectNotes" placeholder="Catatan Cacat" style="flex: 1;">
+        </div>
+
+        <!-- Warehouse -->
+        <div id="grpWarehouse" style="display: none;">
+            <input type="text" class="pdt-input" id="inpRackCode" placeholder="Scan / Ketik Lokasi Rak (RAK-A01)" value="RAK-A01">
+        </div>
+    </div>
+
+    <!-- SCANNER INPUT -->
+    <div class="pdt-scan-box">
+        <div class="pdt-label" style="color: #38bdf8;">INPUT PEMINDAI BARCODE (PDT SCAN)</div>
+        <input type="text" class="pdt-scan-input" id="inpBarcode" placeholder="Scan Barcode Di Sini..." autofocus autocomplete="off">
+        <div class="btn-action-row">
+            <button class="btn-pdt-submit" onclick="submitScan()">SIMPAN SCAN (ROOM DB)</button>
+            <button class="btn-pdt-sync" onclick="syncServer()">SINKRON</button>
+        </div>
+    </div>
+
+    <!-- RECENT OFFLINE SCANS -->
+    <div style="font-size: 12px; font-weight: 700; color: #94a3b8; margin: 8px 0;">ANTREAN SCAN OFFLINE DI MEMORI PDT</div>
+    <div id="historyList"></div>
+
+    <script>
+        let localHistory = [];
+
+        function switchStationUI() {
+            const st = document.getElementById('selStation').value;
+            document.getElementById('grpMaterial').style.display = 'none';
+            document.getElementById('grpBuilding').style.display = 'none';
+            document.getElementById('grpCuring').style.display = 'none';
+            document.getElementById('grpInspection').style.display = 'none';
+            document.getElementById('grpWarehouse').style.display = 'none';
+
+            if (st.includes('MIXING') || st.includes('CALENDERING')) {
+                document.getElementById('grpMaterial').style.display = 'flex';
+                document.getElementById('lblParamTitle').innerText = 'PARAMETER MATERIAL (COMPOUND & BERAT)';
+            } else if (st.includes('BUILDING') || st.includes('LORI')) {
+                document.getElementById('grpBuilding').style.display = 'flex';
+                document.getElementById('lblParamTitle').innerText = 'PARAMETER PERAKITAN TBM (UKURAN & MESIN)';
+            } else if (st.includes('CURING') || st.includes('REPAIR')) {
+                document.getElementById('grpCuring').style.display = 'flex';
+                document.getElementById('lblParamTitle').innerText = 'PARAMETER CURING (CAVITY & DEFECT)';
+            } else if (st.includes('FINAL_INSPECTION')) {
+                document.getElementById('grpInspection').style.display = 'flex';
+                document.getElementById('lblParamTitle').innerText = 'PARAMETER QC INSPECTION (GRADE)';
+            } else if (st.includes('WAREHOUSE')) {
+                document.getElementById('grpWarehouse').style.display = 'block';
+                document.getElementById('lblParamTitle').innerText = 'SMART RACK ROUTING (LOKASI RAK)';
+            }
+            document.getElementById('inpBarcode').focus();
+        }
+
+        function submitScan() {
+            const inp = document.getElementById('inpBarcode');
+            const barcode = inp.value.trim().toUpperCase();
+            if (!barcode) {
+                alert('Silakan scan atau masukkan barcode!');
+                return;
+            }
+
+            const station = document.getElementById('selStation').value;
+            let details = "Stasiun " + station;
+            let qty = 1.0;
+            let status = "NORMAL";
+
+            if (station.includes('MIXING') || station.includes('CALENDERING')) {
+                const cmp = document.getElementById('selCompound').value;
+                qty = parseFloat(document.getElementById('inpWeight').value) || 50.0;
+                details = "Material: " + cmp + " (" + qty + " Kg)";
+            } else if (station.includes('BUILDING')) {
+                const spec = document.getElementById('selSpec').value;
+                const mch = document.getElementById('inpMachine').value;
+                details = "Spec: " + spec + " | Mesin: " + mch;
+            } else if (station.includes('CURING') || station.includes('REPAIR')) {
+                const cav = document.getElementById('selCavity').value;
+                const def = document.getElementById('selDefect').value;
+                details = "Cavity: " + cav + " | Defect: " + def;
+            } else if (station.includes('FINAL_INSPECTION')) {
+                status = document.getElementById('selQcGrade').value;
+                details = "Grade QC: " + status;
+            } else if (station.includes('WAREHOUSE')) {
+                const rk = document.getElementById('inpRackCode').value;
+                details = "Alokasi Rak: " + rk;
+            }
+
+            // Save to native Android Room Database
+            if (window.AndroidPDT) {
+                window.AndroidPDT.saveOfflineScan(barcode, station, details, qty, status);
+            }
+
+            localHistory.unshift({ barcode: barcode, station: station, details: details, time: new Date().toLocaleTimeString() });
+            inp.value = '';
+            inp.focus();
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            localHistory.slice(0, 15).forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'history-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="history-bc">${item.barcode}</div>
+                        <div class="history-sub">${item.station} &bull; ${item.details}</div>
+                    </div>
+                    <div class="badge-pending">PENDING (LOCAL)</div>
+                `;
+                list.appendChild(card);
+            });
+
+            if (window.AndroidPDT) {
+                document.getElementById('badgePendingCount').innerText = 'PENDING: ' + window.AndroidPDT.getPendingCount();
+            } else {
+                document.getElementById('badgePendingCount').innerText = 'PENDING: ' + localHistory.length;
+            }
+        }
+
+        function syncServer() {
+            if (window.AndroidPDT) {
+                window.AndroidPDT.syncNow();
+                window.AndroidPDT.showToast('Mencoba menyinkronkan data antrean offline...');
+            } else {
+                alert('Mencoba sinkronisasi ke server...');
+            }
+        }
+
+        document.getElementById('inpBarcode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitScan();
+            }
+        });
+
+        window.onload = function() {
+            switchStationUI();
+            if (window.AndroidPDT) {
+                document.getElementById('badgePendingCount').innerText = 'PENDING: ' + window.AndroidPDT.getPendingCount();
+            }
+        };
+    </script>
+</body>
+</html>
