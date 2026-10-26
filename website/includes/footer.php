@@ -2,16 +2,22 @@
 /**
  * ==============================================================================================
  * SISTEM BARCODE PABRIK BAN (GTBS) - PT GAJAH TUNGGAL TBK
- * Modul: Footer & Modal Global (Layout Footer & Global Popups)
+ * Modul: Footer & Bottom Navigation (Mobile App & Desktop Global Footer)
  * File : includes/footer.php
  * ==============================================================================================
  * 
  * [FUNGSI & KEGUNAAN]:
- * Menutup pembungkus halaman (content-body & main-wrapper), menyediakan modal global:
- * 1. Modal Cepat Pelaporan Hambatan Mesin 4M (Breakdown)
- * 2. Modal Darurat Panggilan Ambulans / K3 (SOS)
- * Serta meng-import berkas script JavaScript utama (assets/js/main.js).
+ * - Menutup pembungkus halaman (content-body & main-wrapper)
+ * - Menyediakan modal pelaporan hambatan 4M dan darurat medis K3 (SOS)
+ * - Menyediakan Bottom Navigation Bar 5-Tab untuk Mobile App:
+ *     1. Home (Dashboard, SCADA)
+ *     2. Barcode (Pusat Barcode / Stasiun Kerja)
+ *     3. Tombol Scan (Floating Center Action Button)
+ *     4. Message (Hambatan Mesin, Pesan & Broadcast, K3)
+ *     5. Akun (Identitas & Pengaturan Akun)
  */
+
+$isMobileApp = $isMobileApp ?? (function_exists('gtbs_is_mobile_app') && gtbs_is_mobile_app());
 ?>
     </div> <!-- Penutup .content-body -->
 </div> <!-- Penutup .main-wrapper -->
@@ -106,7 +112,65 @@
     </div>
 </div>
 
+<?php if ($isMobileApp): 
+    $mNav = $mobileNav ?? gtbs_mobile_nav($currentUser);
+    $curP = $currentPage ?? basename($_SERVER['PHP_SELF']);
+    $mActive = $activeTabKey ?? gtbs_mobile_active_tab($mNav, $curP);
+    $roleBarcodeDest = $mNav['barcode']['url'] ?? 'operator_lite.php';
+?>
+<!-- ==================== SCANNER HUD MODAL ==================== -->
+<div class="m-scan-hud" id="mScanHud">
+    <div class="m-scan-hud-icon">
+        <?= gtbs_m_icon('scan', 24) ?>
+    </div>
+    <div class="m-scan-hud-text">
+        <b>Scanner Laser PDT Aktif</b>
+        <small>Arahkan sensor ke barcode ban atau masukkan kode manual.</small>
+    </div>
+    <button type="button" onclick="document.getElementById('mScanHud').classList.remove('show')">Tutup</button>
+</div>
+
+<!-- ==================== BOTTOM NAVIGATION BAR (5 TAB) ==================== -->
+<nav class="m-bottom-nav">
+    <!-- 1. HOME (Dashboard / SCADA) -->
+    <a href="<?= htmlspecialchars($mNav['home']['url']) ?>" class="m-nav-item <?= $mActive === 'home' ? 'active' : '' ?>">
+        <?= gtbs_m_icon('home', 21) ?>
+        <span>Home</span>
+    </a>
+
+    <!-- 2. BARCODE / HASIL (Scan Terminal, Generate Barcode, Dept Pabrik / Stasiun) -->
+    <a href="<?= htmlspecialchars($mNav['barcode']['url']) ?>" class="m-nav-item <?= $mActive === 'barcode' ? 'active' : '' ?>">
+        <?= gtbs_m_icon('barcode', 21) ?>
+        <span class="m-nav-badge" id="mBarcodeNavBadge">0</span>
+        <span>Barcode</span>
+    </a>
+
+    <!-- 3. TOMBOL SCAN DI TENGAH (CENTER FLOATING ACTION BUTTON) -->
+    <button type="button" class="m-nav-item m-scan-action <?= gtbs_m_is_scan_page($curP) ? 'armed' : '' ?>" onclick="handleCenterScanClick('<?= htmlspecialchars($roleBarcodeDest) ?>')">
+        <div class="m-scan-btn">
+            <?= gtbs_m_icon('scan', 26) ?>
+        </div>
+        <span>Scan</span>
+    </button>
+
+    <!-- 4. MESSAGE (Hambatan Mesin, Pesan & Broadcast, K3) -->
+    <a href="<?= htmlspecialchars($mNav['message']['url']) ?>" class="m-nav-item <?= $mActive === 'message' ? 'active' : '' ?>">
+        <?= gtbs_m_icon('message', 21) ?>
+        <span>Message</span>
+    </a>
+
+    <!-- 5. AKUN (Profil Pengguna / Kelola Karyawan) -->
+    <a href="<?= htmlspecialchars($mNav['akun']['url']) ?>" class="m-nav-item <?= $mActive === 'akun' ? 'active' : '' ?>">
+        <?= gtbs_m_icon('user', 21) ?>
+        <span>Akun</span>
+    </a>
+</nav>
+<?php endif; ?>
+
 <!-- Berkas JavaScript Utama (Live Clock, Dark Mode Toggle, & Interaksi Modal) -->
 <script src="assets/js/main.js"></script>
+<?php if (!empty($isMobileApp)): ?>
+<script src="assets/js/mobile.js?v=<?= @filemtime(__DIR__ . '/../assets/js/mobile.js') ?>"></script>
+<?php endif; ?>
 </body>
 </html>

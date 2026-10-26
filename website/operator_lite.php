@@ -23,6 +23,7 @@
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/helpers/auth.php';
 require_once __DIR__ . '/helpers/shift.php';
+require_once __DIR__ . '/helpers/mobile.php';
 
 // Wajib Login
 Auth::requireLogin();
@@ -934,8 +935,14 @@ $proTargetUrl = $proUrlMap[$activeSection['dept_code'] ?? ''] ?? 'dashboard.php'
             }
         }
     </style>
+    <link rel="stylesheet" href="assets/css/mobile.css?v=<?= @filemtime(__DIR__ . '/assets/css/mobile.css') ?>">
 </head>
-<body>
+<?php 
+$isMobileApp = gtbs_is_mobile_app(); 
+$mobileNav = gtbs_mobile_nav($currentUser ?? Auth::user()); 
+$activeTabKey = "barcode"; 
+?>
+<body class="<?= $isMobileApp ? 'm-app m-lite' : '' ?>">
 
     <!-- Header Lite Mode -->
     <header class="lite-header">
@@ -966,6 +973,23 @@ $proTargetUrl = $proUrlMap[$activeSection['dept_code'] ?? ''] ?? 'dashboard.php'
     </header>
 
     <div class="lite-container">
+
+        <!-- SYNC DESK WIDGET (LOCAL-FIRST OFFLINE STORAGE) -->
+        <div class="m-syncbar" style="margin: 0 0 14px 0;">
+            <div class="m-syncbar-info">
+                <div class="m-syncbar-title">
+                    <span><?= gtbs_m_icon('sync', 16) ?></span>
+                    <span>Sync Desk &bull; Local-First Storage</span>
+                    <span class="m-pending-badge" id="mSyncPendingBadge">0</span>
+                </div>
+                <div class="m-syncbar-sub">Hasil scan tersimpan di PDT jika offline, kirim ke database server.</div>
+            </div>
+            <button type="button" class="m-sync-btn" id="mBtnSyncDesk" onclick="triggerMobileSync()">
+                <?= gtbs_m_icon('sync', 14) ?>
+                <span>Sync Desk</span>
+            </button>
+        </div>
+
 
         <!-- Banner Feedback Notifikasi -->
         <?php if (!empty($flashMessage)): ?>
@@ -1555,5 +1579,55 @@ $proTargetUrl = $proUrlMap[$activeSection['dept_code'] ?? ''] ?? 'dashboard.php'
             });
         });
     </script>
+
+<?php if ($isMobileApp): 
+    $roleBarcodeDest = $mobileNav['barcode']['url'] ?? 'operator_lite.php';
+?>
+<!-- ==================== SCANNER HUD MODAL ==================== -->
+<div class="m-scan-hud" id="mScanHud">
+    <div class="m-scan-hud-icon">
+        <?= gtbs_m_icon('scan', 24) ?>
+    </div>
+    <div class="m-scan-hud-text">
+        <b>Scanner Laser PDT Aktif</b>
+        <small>Arahkan sensor ke barcode ban atau masukkan kode manual.</small>
+    </div>
+    <button type="button" onclick="document.getElementById('mScanHud').classList.remove('show')">Tutup</button>
+</div>
+
+<!-- ==================== BOTTOM NAVIGATION BAR (5 TAB) ==================== -->
+<nav class="m-bottom-nav">
+    <a href="<?= htmlspecialchars($mobileNav['home']['url']) ?>" class="m-nav-item">
+        <?= gtbs_m_icon('home', 21) ?>
+        <span>Home</span>
+    </a>
+
+    <a href="<?= htmlspecialchars($mobileNav['barcode']['url']) ?>" class="m-nav-item active">
+        <?= gtbs_m_icon('barcode', 21) ?>
+        <span class="m-nav-badge" id="mBarcodeNavBadge">0</span>
+        <span>Barcode</span>
+    </a>
+
+    <button type="button" class="m-nav-item m-scan-action armed" onclick="handleCenterScanClick('<?= htmlspecialchars($roleBarcodeDest) ?>')">
+        <div class="m-scan-btn">
+            <?= gtbs_m_icon('scan', 26) ?>
+        </div>
+        <span>Scan</span>
+    </button>
+
+    <a href="<?= htmlspecialchars($mobileNav['message']['url']) ?>" class="m-nav-item">
+        <?= gtbs_m_icon('message', 21) ?>
+        <span>Message</span>
+    </a>
+
+    <a href="<?= htmlspecialchars($mobileNav['akun']['url']) ?>" class="m-nav-item">
+        <?= gtbs_m_icon('user', 21) ?>
+        <span>Akun</span>
+    </a>
+</nav>
+
+<script src="assets/js/mobile.js?v=<?= @filemtime(__DIR__ . '/assets/js/mobile.js') ?>"></script>
+<?php endif; ?>
+
 </body>
 </html>

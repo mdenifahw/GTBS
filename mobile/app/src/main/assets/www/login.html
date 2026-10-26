@@ -2,195 +2,183 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Login - GT Barcode System (ERP & SCADA)</title>
-    <!-- Favicon / Tab Logo -->
-    <link rel="icon" type="image/png" href="assets/img/Logo_Aplikasi.png">
-    <link rel="shortcut icon" type="image/png" href="assets/img/Logo_Aplikasi.png">
-    <link rel="apple-touch-icon" href="assets/img/Logo_Aplikasi.png">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Login - GT Barcode System (PDT Offline Edition)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="mobile.css">
     <style>
+        :root {
+            --app-bg: #0b0f19;
+            --app-card: #111827;
+            --app-input: #1a2233;
+            --app-border: rgba(148, 163, 184, 0.16);
+            --app-text: #f9fafb;
+            --app-text-muted: #9ca3af;
+            --app-accent: #3b82f6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body {
+            min-height: 100vh;
+            background: radial-gradient(120% 60% at 50% 0%, rgba(59, 130, 246, 0.18) 0%, transparent 60%), var(--app-bg);
+            color: var(--app-text);
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0b0f19 80%);
-            padding: 20px;
+            padding: 16px;
         }
-        .login-box {
-            width: 100%;
-            max-width: 460px;
-            background: rgba(17, 24, 39, 0.95);
-            border: 1px solid #374151;
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        .m-login-wrapper { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; }
+        .m-brand-card {
+            background: linear-gradient(145deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.95));
+            border: 1px solid var(--app-border);
+            border-radius: 22px;
+            padding: 22px 20px 18px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
         }
-        .login-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
+        .m-brand-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #3b82f6, #06b6d4, #10b981); }
+        .m-brand-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+        .m-brand-logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .m-logo-box {
+            width: 46px; height: 46px; border-radius: 14px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.12));
+            border: 1px solid rgba(96, 165, 250, 0.35);
+            display: grid; place-items: center; font-size: 20px;
         }
-        .login-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: #f3f4f6;
-            letter-spacing: -0.5px;
+        .m-brand-info h1 { font-size: 17px; font-weight: 800; color: #ffffff; }
+        .m-brand-info p { font-size: 11px; font-weight: 600; color: var(--app-text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+        .m-shift-pill {
+            display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+            font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);
         }
-        .login-subtitle {
-            font-size: 12px;
-            color: #9ca3af;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
+        .m-input-group { margin-bottom: 14px; }
+        .m-input-label { display: block; font-size: 12px; font-weight: 700; color: #e2e8f0; margin-bottom: 6px; }
+        .m-input-box { position: relative; display: flex; align-items: center; }
+        .m-input-field {
+            width: 100%; height: 48px; background: var(--app-input); border: 1px solid var(--app-border);
+            border-radius: 14px; padding: 0 16px; font-size: 15px; color: #ffffff; font-weight: 500; outline: none;
         }
-        .quick-accounts {
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 1px solid #374151;
+        .m-btn-login {
+            width: 100%; height: 48px; border-radius: 14px; border: none;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #ffffff; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+            box-shadow: 0 10px 24px -6px rgba(37, 99, 235, 0.65);
         }
-        .quick-accounts-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #9ca3af;
-            font-weight: 700;
-            margin-bottom: 10px;
+        .m-quick-card {
+            background: rgba(17, 24, 39, 0.9); border: 1px solid var(--app-border); border-radius: 20px; padding: 16px;
         }
-        .quick-btn-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
+        .m-quick-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; }
+        .m-filter-btn {
+            background: rgba(30, 41, 59, 0.8); border: 1px solid var(--app-border); color: #94a3b8;
+            padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
         }
-        .quick-btn {
-            background: rgba(31, 41, 55, 0.8);
-            border: 1px solid #4b5563;
-            color: #e5e7eb;
-            padding: 8px 10px;
-            border-radius: 6px;
-            font-size: 11.5px;
-            cursor: pointer;
-            text-align: left;
-            text-decoration: none;
-            display: block;
-            transition: all 0.2s;
+        .m-filter-btn.active { background: #2563eb; color: #ffffff; }
+        .m-quick-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+        .m-account-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+            background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 14px;
+            text-decoration: none; color: var(--app-text); cursor: pointer;
         }
-        .quick-btn:hover {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
+        .m-acc-badge {
+            width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+            font-size: 11px; font-weight: 800; color: #ffffff; flex-shrink: 0;
         }
-        .quick-btn-role {
-            font-size: 10px;
-            color: #9ca3af;
-            display: block;
-        }
+        .m-acc-name { font-size: 13px; font-weight: 700; color: #f1f5f9; }
+        .m-acc-desc { font-size: 11px; color: #94a3b8; }
     </style>
 </head>
 <body>
-
-<div class="login-box">
-    <!-- Identitas Perusahaan -->
-    <div class="login-logo">
-        <img src="assets/img/Gajah_Tunggal.png" width="48" height="48" alt="Logo GT">
-        <div>
-            <div class="login-title">GT BARCODE SYSTEM</div>
-            <div class="login-subtitle">PT Gajah Tunggal Tbk &bull; Plant ERP & SCADA</div>
+<div class="m-login-wrapper">
+    <div class="m-brand-card">
+        <div class="m-brand-header">
+            <div class="m-brand-logo-wrap">
+                <div class="m-logo-box">🏭</div>
+                <div class="m-brand-info">
+                    <h1>GT BARCODE</h1>
+                    <p>PDT Local-First Offline</p>
+                </div>
+            </div>
+            <div class="m-shift-pill">
+                <span>Mode Offline</span>
+            </div>
         </div>
+
+        <form onsubmit="handleOfflineLogin(event)">
+            <div class="m-input-group">
+                <label class="m-input-label">NIK / Username Operator</label>
+                <div class="m-input-box">
+                    <input type="text" id="inpUsername" class="m-input-field" placeholder="Masukkan NIK (misal: OP-CUR-01)..." required autofocus>
+                </div>
+            </div>
+            <div class="m-input-group">
+                <label class="m-input-label">Password</label>
+                <div class="m-input-box">
+                    <input type="password" id="inpPassword" class="m-input-field" value="password123" required>
+                </div>
+            </div>
+            <button type="submit" class="m-btn-login">
+                <span>Buka Mode Terminal PDT</span>
+            </button>
+        </form>
     </div>
 
-    <!-- Tampilan Pesan Kesalahan jika login gagal -->
-    
-    <!-- Formulir Input Username / NIK dan Password -->
-    <form method="POST" action="login.php">
-        <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label required">NIK atau Username Karyawan</label>
-            <input type="text" name="username" class="form-input" placeholder="Masukkan NIK atau username" required autofocus>
+    <div class="m-quick-card">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #94a3b8;">Akses Cepat 1-Klik</span>
+            <span style="font-size: 10.5px; color: #60a5fa; font-weight: 700;">Offline Ready</span>
         </div>
-
-        <div class="form-group" style="margin-bottom: 24px;">
-            <label class="form-label required">Password</label>
-            <input type="password" name="password" class="form-input" placeholder="Masukkan password akun" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700;">
-            Masuk ke Sistem
-        </button>
-    </form>
-
-    <!-- Pilihan Akun Masuk Cepat untuk Pengujian / Demo -->
-    <div class="quick-accounts">
-        <div class="quick-accounts-title" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Akses Cepat Uji Hierarki Jabatan (1-Klik):</span>
-            <span style="color: #60a5fa; font-size: 10px;">9 Tingkat Jabatan</span>
-        </div>
-        <div class="quick-btn-grid" style="grid-template-columns: repeat(2, 1fr); max-height: 230px; overflow-y: auto; padding-right: 4px;">
-            <a href="#" onclick="handleOfflineQuickLogin('SA-001'); return false;" class="quick-btn">
-                <strong style="color: #60a5fa;">1. Super Admin</strong>
-                <span class="quick-btn-role">NIK: SA-001 &bull; Akses Penuh</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('PH-001'); return false;" class="quick-btn">
-                <strong style="color: #34d399;">2. Plant Head</strong>
-                <span class="quick-btn-role">NIK: PH-001 &bull; Akses Luas</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('APH-001'); return false;" class="quick-btn">
-                <strong style="color: #a78bfa;">3. Asst Plant Head</strong>
-                <span class="quick-btn-role">NIK: APH-001 &bull; Membantu PH</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('HEAD-CUR-01'); return false;" class="quick-btn">
-                <strong style="color: #fbbf24;">4. Dept Head Curing</strong>
-                <span class="quick-btn-role">NIK: HEAD-CUR-01 &bull; Dept Curing</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('AHEAD-CUR-01'); return false;" class="quick-btn">
-                <strong style="color: #f59e0b;">5. Asst Dept Head</strong>
-                <span class="quick-btn-role">NIK: AHEAD-CUR-01 &bull; Curing</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('ADM-CUR-01'); return false;" class="quick-btn">
-                <strong style="color: #38bdf8;">6. Admin Dept Curing</strong>
-                <span class="quick-btn-role">NIK: ADM-CUR-01 &bull; Generate Barcode</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('ADM-WH-01'); return false;" class="quick-btn">
-                <strong style="color: #38bdf8;">6b. Admin Dept Gudang</strong>
-                <span class="quick-btn-role">NIK: ADM-WH-01 &bull; Gudang Bahan</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('SH-CUR-01'); return false;" class="quick-btn">
-                <strong style="color: #f97316;">7. Section Head Curing</strong>
-                <span class="quick-btn-role">NIK: SH-CUR-01 &bull; Seksi Curing</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('LDR-CUR-01'); return false;" class="quick-btn">
-                <strong style="color: #ec4899;">8. Leader Curing</strong>
-                <span class="quick-btn-role">NIK: LDR-CUR-01 &bull; Leader Regu</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('OP-CUR-01'); return false;" class="quick-btn">
-                <strong style="color: #94a3b8;">9. Operator Curing</strong>
-                <span class="quick-btn-role">NIK: OP-CUR-01 &bull; Operator Press</span>
-            </a>
-            <a href="#" onclick="handleOfflineQuickLogin('OP-CUR-04'); return false;" class="quick-btn">
-                <strong style="color: #94a3b8;">9b. Operator Repair</strong>
-                <span class="quick-btn-role">NIK: OP-CUR-04 &bull; Operator Repair</span>
-            </a>
-        </div>
-        <div style="font-size: 11px; color: #6b7280; margin-top: 12px; text-align: center;">
-            Password default untuk semua akun: <code>password123</code>
+        <div class="m-quick-list">
+            <div class="m-account-item" onclick="quickSelect('SA-001', 'Super Admin')">
+                <div class="m-acc-badge" style="background: #3b82f6;">SA</div>
+                <div style="flex:1;">
+                    <div class="m-acc-name">Super Admin (SA-001)</div>
+                    <div class="m-acc-desc">Akses Penuh Semua Stasiun & Sinkronisasi</div>
+                </div>
+                <span>&rarr;</span>
+            </div>
+            <div class="m-account-item" onclick="quickSelect('OP-CUR-01', 'Operator Curing')">
+                <div class="m-acc-badge" style="background: #64748b;">OP</div>
+                <div style="flex:1;">
+                    <div class="m-acc-name">Operator Curing Press (OP-CUR-01)</div>
+                    <div class="m-acc-desc">Stasiun Curing Press Ban</div>
+                </div>
+                <span>&rarr;</span>
+            </div>
+            <div class="m-account-item" onclick="quickSelect('OP-BLD-01', 'Operator Building')">
+                <div class="m-acc-badge" style="background: #10b981;">BLD</div>
+                <div style="flex:1;">
+                    <div class="m-acc-name">Operator Building PCR (OP-BLD-01)</div>
+                    <div class="m-acc-desc">Stasiun Perakitan Green Tire</div>
+                </div>
+                <span>&rarr;</span>
+            </div>
+            <div class="m-account-item" onclick="quickSelect('OP-WH-01', 'Operator Gudang')">
+                <div class="m-acc-badge" style="background: #f59e0b;">WH</div>
+                <div style="flex:1;">
+                    <div class="m-acc-name">Operator Gudang Bahan (OP-WH-01)</div>
+                    <div class="m-acc-desc">Stasiun Penerima & Pengirim Rak</div>
+                </div>
+                <span>&rarr;</span>
+            </div>
         </div>
     </div>
 </div>
 
-
-    <script>
-    function handleOfflineQuickLogin(nik) {
-        if (window.AndroidPDT) {
-            window.AndroidPDT.showToast('Mode Offline: Membuka antarmuka peran ' + nik);
-        }
-        // Direct to offline PDT operator screen
-        window.location.href = 'index.html';
+<script>
+function handleOfflineLogin(e) {
+    if (e) e.preventDefault();
+    const u = document.getElementById('inpUsername').value.trim() || 'OP-CUR-01';
+    localStorage.setItem('gtbs_offline_user', u);
+    if (window.AndroidPDT && typeof window.AndroidPDT.showToast === 'function') {
+        window.AndroidPDT.showToast('Masuk sebagai ' + u);
     }
-    </script>
-    </body>
+    window.location.href = 'index.html';
+}
+
+function quickSelect(nik, role) {
+    document.getElementById('inpUsername').value = nik;
+    handleOfflineLogin();
+}
+</script>
+</body>
 </html>

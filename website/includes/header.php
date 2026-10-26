@@ -2,7 +2,7 @@
 /**
  * ==============================================================================================
  * SISTEM BARCODE PABRIK BAN (GTBS) - PT GAJAH TUNGGAL TBK
- * Modul: Header & Navigasi Atas (Top Header Layout)
+ * Modul: Header & Navigasi Atas (Top Header Layout + Mobile App Shell)
  * File : includes/header.php
  * ==============================================================================================
  * 
@@ -11,18 +11,21 @@
  * menu burger navigasi mobile, judul halaman aktif, pill shift berjalan, jam digital live (WIB),
  * tombol dark/light theme, tombol pemicu darurat K3 (SOS), serta tombol Logout.
  * 
- * [PANDUAN MODIFIKASI]:
- * - Header ini otomatis memeriksa login (Auth::requireLogin()) sebelum halaman dirender.
- * - Tampilan didesain responsive dengan CSS flexbox agar rapi di layar desktop, tablet, maupun layar sempit PDT.
+ * Terintegrasi penuh dengan Mobile App Shell & Bottom Navigation saat dibuka dari aplikasi Android (PDT).
  */
 
 require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../helpers/shift.php';
+require_once __DIR__ . '/../helpers/mobile.php';
 
 // Pastikan pengguna sudah terotentikasi sebelum membuka modul
 Auth::requireLogin();
 $currentUser = Auth::user();
 $shiftInfo = ShiftHelper::getShiftInfo();
+$isMobileApp = gtbs_is_mobile_app();
+$mobileNav = gtbs_mobile_nav($currentUser);
+$currentPage = basename($_SERVER['PHP_SELF']);
+$activeTabKey = gtbs_mobile_active_tab($mobileNav, $currentPage);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -36,7 +39,6 @@ $shiftInfo = ShiftHelper::getShiftInfo();
     <link rel="shortcut icon" type="image/png" href="assets/img/Logo_Aplikasi.png">
     <link rel="apple-touch-icon" href="assets/img/Logo_Aplikasi.png">
 
-    
     <!-- Google Fonts: Inter untuk tipografi industri modern yang jelas -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,12 +46,56 @@ $shiftInfo = ShiftHelper::getShiftInfo();
     
     <!-- Master CSS Design System (Tema Gelap, Glassmorphism & Responsif) -->
     <link rel="stylesheet" href="assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/mobile.css?v=<?= @filemtime(__DIR__ . '/../assets/css/mobile.css') ?>">
     <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('gtbs_theme') || 'dark');</script>
 </head>
 
-<body>
+<body class="<?= $isMobileApp ? 'm-app' : '' ?>">
 
-    <!-- Memuat Navigasi Menu Samping (Sidebar) -->
+<?php if ($isMobileApp): ?>
+    <!-- TOP APP BAR KHUSUS MOBILE APP (ANDROID PDT / HP) -->
+    <div class="m-appbar">
+        <div class="m-appbar-row">
+            <a href="dashboard.php" class="m-brand" title="GT Barcode System">
+                <img src="assets/img/Gajah_Tunggal.png" alt="GT">
+            </a>
+            <div class="m-titles">
+                <div class="m-eyebrow">
+                    <span class="m-live-dot"></span>
+                    <span>GTBS MOBILE &bull; Shift <?= (int)($shiftInfo['shift'] ?? 1) ?></span>
+                </div>
+                <div class="m-title"><?= htmlspecialchars($pageTitle ?? 'GT Barcode System') ?></div>
+            </div>
+            <div class="m-actions">
+                <span class="m-net online" id="mNetBadge">
+                    <i></i> <span>Online</span>
+                </span>
+                <button type="button" class="m-icon-btn m-sos" onclick="openModal('sosEmergencyModal')" title="Darurat K3">
+                    SOS
+                </button>
+            </div>
+        </div>
+
+        <?php 
+        // Sub-menu chips per tab aktif (misal Home: Dashboard | SCADA; Message: Hambatan | Pesan | K3)
+        $activeTabItems = $mobileNav[$activeTabKey]['items'] ?? [];
+        if (count($activeTabItems) > 1):
+        ?>
+        <div class="m-chips">
+            <?php foreach ($activeTabItems as $item): 
+                $isItemActive = gtbs_m_item_matches($item[1], $currentPage);
+            ?>
+            <a href="<?= htmlspecialchars($item[1]) ?>" class="m-chip <?= $isItemActive ? 'active' : '' ?>">
+                <?= gtbs_m_icon($item[2], 14) ?>
+                <span><?= htmlspecialchars($item[0]) ?></span>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
+
+    <!-- Memuat Navigasi Menu Samping (Sidebar Desktop) -->
     <?php require_once __DIR__ . '/sidebar.php'; ?>
 
     <!-- Pembungkus Konten Utama Aplikasi -->
@@ -77,9 +123,7 @@ $shiftInfo = ShiftHelper::getShiftInfo();
 
             <!-- Bagian Kanan Header: Jam Digital, Ganti Tema, Tombol SOS K3 & Tombol Logout -->
             <div class="header-right">
-
-
-                <!-- Jam Digital Realtime (Diperbarui setiap detik oleh main.js) -->
+                <!-- Jam Digital Realtime -->
                 <div class="live-clock-badge" title="Waktu Server (WIB)">
                     <svg class="clock-svg" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="2"></circle><path stroke-linecap="round" stroke-width="2" d="M12 7v5l3 2"></path></svg>
                     <span id="liveClock"><?= $shiftInfo['time'] ?></span>
