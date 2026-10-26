@@ -18,8 +18,8 @@
             android:layout_height="100dp"
             android:layout_marginBottom="16dp"
             android:contentDescription="GT Logo"
-            app:srcCompat="@drawable/ic_launcher_foreground"
-            app:tint="#2563eb" />
+            app:srcCompat="@drawable/app_logo"
+             />
 
         <TextView
             android:layout_width="wrap_content"

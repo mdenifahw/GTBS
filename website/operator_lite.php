@@ -947,7 +947,7 @@ $activeTabKey = "barcode";
     <!-- Header Lite Mode -->
     <header class="lite-header">
         <div class="lite-header-left">
-            <img src="assets/img/Gajah_Tunggal.png" alt="GT Logo" class="lite-logo">
+            <img src="assets/img/Logo_Aplikasi.png" alt="GT Logo" class="lite-logo">
             <div class="brand-box">
                 <h1>GT BARCODE <span class="badge-lite">LITE</span></h1>
                 <div class="brand-sub">Workstation Input Lapangan - PT Gajah Tunggal Tbk</div>

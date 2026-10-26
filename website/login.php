@@ -288,18 +288,20 @@ $quickAccounts = [
             width: 48px;
             height: 48px;
             border-radius: 14px;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.12));
-            border: 1px solid rgba(96, 165, 250, 0.35);
+            background: #ffffff;
+            border: 1px solid rgba(96, 165, 250, 0.4);
             display: grid;
             place-items: center;
-            padding: 6px;
+            padding: 3px;
             box-shadow: 0 8px 16px -6px rgba(59, 130, 246, 0.5);
+            overflow: hidden;
         }
 
         .m-logo-box img {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            border-radius: 11px;
         }
 
         .m-brand-info h1 {
@@ -608,7 +610,7 @@ $quickAccounts = [
         <div class="m-brand-header">
             <div class="m-brand-logo-wrap">
                 <div class="m-logo-box">
-                    <img src="assets/img/Gajah_Tunggal.png" alt="GT Logo">
+                    <img src="assets/img/Logo_Aplikasi.png" alt="GT Logo">
                 </div>
                 <div class="m-brand-info">
                     <h1>GT BARCODE</h1>

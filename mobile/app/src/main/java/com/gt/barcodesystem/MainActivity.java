@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadInitialUrl() {
         String savedUrl = prefs.getString(KEY_SERVER_URL, "");
-        if (savedUrl.isEmpty()) {
+        if (savedUrl.isEmpty() || !savedUrl.contains("/website/")) {
             savedUrl = isRunningOnEmulator() ? DEFAULT_EMULATOR_URL : DEFAULT_WIFI_URL;
             prefs.edit().putString(KEY_SERVER_URL, savedUrl).apply();
         }

@@ -57,7 +57,7 @@ $activeTabKey = gtbs_mobile_active_tab($mobileNav, $currentPage);
     <div class="m-appbar">
         <div class="m-appbar-row">
             <a href="dashboard.php" class="m-brand" title="GT Barcode System">
-                <img src="assets/img/Gajah_Tunggal.png" alt="GT">
+                <img src="assets/img/Logo_Aplikasi.png" alt="GT">
             </a>
             <div class="m-titles">
                 <div class="m-eyebrow">
