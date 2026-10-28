@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
+import android.webkit.CookieManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -34,6 +35,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.gt.barcodesystem.data.local.AppDatabase;
 import com.gt.barcodesystem.data.sync.SyncManager;
 import com.gt.barcodesystem.util.PdtBridge;
+import com.gt.barcodesystem.util.SessionManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,7 +43,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_SERVER_URL = "SERVER_BASE_URL";
     private static final String DEFAULT_EMULATOR_URL = "http://10.0.2.2:8000/GT_Barcode_System/website/login.php";
     private static final String DEFAULT_WIFI_URL = "http://192.168.1.100:8000/GT_Barcode_System/website/login.php";
-    private static final String OFFLINE_ASSET_URL = "file:///android_asset/www/login.html";
+    private static final String OFFLINE_DASHBOARD_URL = "file:///android_asset/www/index.html";
+    private static final String OFFLINE_LOGIN_URL = "file:///android_asset/www/login.html";
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -51,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton fabSettings;
 
     private PdtBridge pdtBridge;
+    private SessionManager sessionManager;
     private SyncManager syncManager;
     private SharedPreferences prefs;
     private boolean isOfflinePageLoaded = false;
@@ -62,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        sessionManager = new SessionManager(this);
         syncManager = SyncManager.getInstance(this);
 
         initViews();
@@ -91,31 +96,72 @@ public class MainActivity extends AppCompatActivity {
             public void onSyncRequested() {
                 runOnUiThread(() -> triggerSync());
             }
+
+            @Override
+            public void onLogoutRequested() {
+                runOnUiThread(() -> {
+                    sessionManager.logout();
+                    CookieManager.getInstance().removeAllCookies(null);
+                    CookieManager.getInstance().flush();
+                    Toast.makeText(MainActivity.this, "Berhasil Keluar Akun", Toast.LENGTH_SHORT).show();
+                    if (pdtBridge.isOnline()) {
+                        loadActiveServerUrl();
+                    } else {
+                        loadOfflineLoginPage();
+                    }
+                });
+            }
         });
     }
 
     private void setupWebView() {
-        WebSettings ws = webView.getSettings();
-        ws.setJavaScriptEnabled(true);
-        ws.setDomStorageEnabled(true);
-        ws.setDatabaseEnabled(true);
-        ws.setAllowFileAccess(true);
-        ws.setAllowContentAccess(true);
-        ws.setCacheMode(WebSettings.LOAD_DEFAULT);
-        ws.setLoadWithOverviewMode(true);
-        ws.setUseWideViewPort(true);
-        ws.setBuiltInZoomControls(false);
-        ws.setDisplayZoomControls(false);
-        ws.setUserAgentString(ws.getUserAgentString() + " GTBarcodeMobile/2.0");
-        webView.setBackgroundColor(android.graphics.Color.parseColor("#0b0f19"));
-        WebView.setWebContentsDebuggingEnabled(true);
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setDatabaseEnabled(true);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setUseWideViewPort(true);
+        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
+        // User-agent custom identification
+        String defaultUa = webSettings.getUserAgentString();
+        webSettings.setUserAgentString(defaultUa + " GTBarcodeMobile/1.0 PDT_Android");
+
+        // Persistent Cookies
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setAcceptThirdPartyCookies(webView, true);
+
+        // Native PDT Javascript Bridge
         webView.addJavascriptInterface(pdtBridge, "AndroidPDT");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                if (url.contains("logout.php")) {
+                    sessionManager.logout();
+                    CookieManager.getInstance().removeAllCookies(null);
+                    CookieManager.getInstance().flush();
+                    if (pdtBridge.isOnline()) {
+                        view.loadUrl(getLoginUrl());
+                    } else {
+                        loadOfflineLoginPage();
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 progressBar.setVisibility(View.VISIBLE);
+                if (url.contains("logout.php")) {
+                    sessionManager.logout();
+                }
             }
 
             @Override
@@ -127,6 +173,13 @@ public class MainActivity extends AppCompatActivity {
                     checkPendingScansAndUpdateBanner();
                 } else {
                     cardOfflineBanner.setVisibility(View.GONE);
+                    CookieManager.getInstance().flush();
+
+                    // If logged in on the web, capture session and record URL
+                    if (!url.contains("login.php") && !url.contains("logout.php")) {
+                        sessionManager.setLastUrl(url);
+                        injectSessionExtractorScript();
+                    }
                 }
 
                 // Inject offline interceptor script to web pages
@@ -139,8 +192,6 @@ public class MainActivity extends AppCompatActivity {
                     loadOfflineLocalPage();
                 }
             }
-
-
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
@@ -155,10 +206,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-
-
         fabSettings.setOnClickListener(v -> showServerConfigDialog());
-
         btnBannerSync.setOnClickListener(v -> triggerSync());
     }
 
@@ -173,28 +221,82 @@ public class MainActivity extends AppCompatActivity {
                 || "google_sdk".equals(Build.PRODUCT);
     }
 
-    private void loadInitialUrl() {
+    private String getBaseServerUrl() {
         String savedUrl = prefs.getString(KEY_SERVER_URL, "");
         if (savedUrl.isEmpty() || !savedUrl.contains("/website/")) {
             savedUrl = isRunningOnEmulator() ? DEFAULT_EMULATOR_URL : DEFAULT_WIFI_URL;
             prefs.edit().putString(KEY_SERVER_URL, savedUrl).apply();
         }
-        webView.loadUrl(savedUrl);
+        return savedUrl;
+    }
+
+    private String getLoginUrl() {
+        String base = getBaseServerUrl();
+        if (base.endsWith("login.php")) return base;
+        int idx = base.lastIndexOf('/');
+        return (idx != -1 ? base.substring(0, idx + 1) : base) + "login.php";
+    }
+
+    private void loadInitialUrl() {
+        boolean online = pdtBridge.isOnline();
+        if (sessionManager.isLoggedIn()) {
+            if (online) {
+                String targetUrl = sessionManager.getLastUrl();
+                if (targetUrl.isEmpty() || targetUrl.contains("login.php")) {
+                    String base = getBaseServerUrl();
+                    String baseDir = base.substring(0, base.lastIndexOf('/') + 1);
+                    String role = sessionManager.getRole();
+                    if ("operator".equalsIgnoreCase(role) || "leader".equalsIgnoreCase(role) || "section_head".equalsIgnoreCase(role)) {
+                        targetUrl = baseDir + "operator_lite.php";
+                    } else {
+                        targetUrl = baseDir + "dashboard.php";
+                    }
+                }
+                webView.loadUrl(targetUrl);
+            } else {
+                loadOfflineDashboardPage();
+            }
+        } else {
+            if (online) {
+                loadActiveServerUrl();
+            } else {
+                loadOfflineLoginPage();
+            }
+        }
     }
 
     private void loadActiveServerUrl() {
-        String url = prefs.getString(KEY_SERVER_URL, DEFAULT_EMULATOR_URL);
+        String url = getLoginUrl();
         webView.loadUrl(url);
+    }
+
+    private void loadOfflineDashboardPage() {
+        runOnUiThread(() -> {
+            isOfflinePageLoaded = true;
+            cardOfflineBanner.setVisibility(View.VISIBLE);
+            webView.loadUrl(OFFLINE_DASHBOARD_URL);
+            checkPendingScansAndUpdateBanner();
+            Toast.makeText(this, "Mode Offline PDT Aktif", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void loadOfflineLoginPage() {
+        runOnUiThread(() -> {
+            isOfflinePageLoaded = true;
+            cardOfflineBanner.setVisibility(View.VISIBLE);
+            webView.loadUrl(OFFLINE_LOGIN_URL);
+            checkPendingScansAndUpdateBanner();
+        });
     }
 
     private void loadOfflineLocalPage() {
         runOnUiThread(() -> {
             if (!isOfflinePageLoaded) {
-                isOfflinePageLoaded = true;
-                cardOfflineBanner.setVisibility(View.VISIBLE);
-                webView.loadUrl(OFFLINE_ASSET_URL);
-                checkPendingScansAndUpdateBanner();
-                Toast.makeText(this, "Mode Offline PDT (Lokal Room DB)", Toast.LENGTH_SHORT).show();
+                if (sessionManager.isLoggedIn()) {
+                    loadOfflineDashboardPage();
+                } else {
+                    loadOfflineLoginPage();
+                }
             }
         });
     }
@@ -209,22 +311,22 @@ public class MainActivity extends AppCompatActivity {
     private void updateOfflineBanner(int pendingCount) {
         if (pendingCount > 0 || isOfflinePageLoaded) {
             cardOfflineBanner.setVisibility(View.VISIBLE);
-            tvOfflineBannerText.setText("MODE OFFLINE PDT (Lokal Room DB) ? " + pendingCount + " Pending");
+            tvOfflineBannerText.setText("MODE OFFLINE PDT (Lokal Room DB) • " + pendingCount + " Pending");
         } else {
             cardOfflineBanner.setVisibility(View.GONE);
         }
     }
 
     private void triggerSync() {
-        Toast.makeText(this, "Menyinkronkan data antrean offline...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Menyinkronkan antrean scan offline...", Toast.LENGTH_SHORT).show();
         syncManager.syncPendingScans(new SyncManager.SyncCallback() {
             @Override
             public void onSyncCompleted(int syncedCount) {
                 runOnUiThread(() -> {
                     Toast.makeText(MainActivity.this, "Sukses sinkron: " + syncedCount + " scan.", Toast.LENGTH_SHORT).show();
                     checkPendingScansAndUpdateBanner();
-                    if (isOfflinePageLoaded) {
-                        loadActiveServerUrl();
+                    if (isOfflinePageLoaded && pdtBridge.isOnline()) {
+                        loadInitialUrl();
                     }
                 });
             }
@@ -249,7 +351,7 @@ public class MainActivity extends AppCompatActivity {
                         // Background auto-sync when network is back
                         syncManager.syncPendingScans(null);
                         if (isOfflinePageLoaded) {
-                            loadActiveServerUrl();
+                            loadInitialUrl();
                         }
                     });
                 }
@@ -271,7 +373,7 @@ public class MainActivity extends AppCompatActivity {
 
         EditText etUrl = new EditText(this);
         etUrl.setText(currentUrl);
-        etUrl.setHint("http://192.168.1.100:8000/GT_Barcode_System/");
+        etUrl.setHint("http://192.168.1.100:8000/GT_Barcode_System/website/login.php");
         container.addView(etUrl);
 
         new AlertDialog.Builder(this)
@@ -280,7 +382,6 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Simpan & Muat", (dialog, which) -> {
                     String newUrl = etUrl.getText().toString().trim();
                     if (!newUrl.isEmpty()) {
-                        if (!newUrl.endsWith("/")) newUrl += "/";
                         prefs.edit().putString(KEY_SERVER_URL, newUrl).apply();
                         webView.loadUrl(newUrl);
                     }
@@ -296,6 +397,21 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void injectSessionExtractorScript() {
+        String js = "(function() {" +
+                "  try {" +
+                "    var uName = document.querySelector('.user-name') || document.querySelector('.user-profile-name') || document.querySelector('.user-meta .user-name');" +
+                "    var rName = document.querySelector('.user-role') || document.querySelector('.user-meta .user-role');" +
+                "    var fullName = uName ? uName.innerText.trim() : '';" +
+                "    var role = rName ? rName.innerText.trim().toLowerCase() : '';" +
+                "    if (fullName && window.AndroidPDT) {" +
+                "      window.AndroidPDT.syncWebSession(fullName, role, window.location.href);" +
+                "    }" +
+                "  } catch(e) {}" +
+                "})();";
+        webView.evaluateJavascript(js, null);
+    }
+
     private void injectPdtOfflineScript() {
         String js = "(function() {" +
                 "  if (window.__pdtInjected) return;" +
@@ -306,7 +422,6 @@ public class MainActivity extends AppCompatActivity {
                 "})();";
         webView.evaluateJavascript(js, null);
     }
-
 
     @Override
     protected void onNewIntent(Intent intent) {

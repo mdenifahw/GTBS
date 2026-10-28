@@ -1,283 +1,616 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GTBS - Mode Offline PDT (Local Room DB)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GTBS Mobile - Mode Offline PDT</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="mobile.css">
     <style>
+        :root {
+            --m-bg: #0b0f19;
+            --m-surface: #111827;
+            --m-card: #151d30;
+            --m-border: rgba(148, 163, 184, 0.16);
+            --m-text: #f9fafb;
+            --m-text-2: #94a3b8;
+            --m-accent: #3b82f6;
+            --m-success: #10b981;
+            --m-warning: #f59e0b;
+            --m-nav-h: 70px;
+            --m-safe-b: env(safe-area-inset-bottom, 0px);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body {
-            background-color: #0b0f19;
-            color: #f9fafb;
-            padding: 12px;
-            font-family: 'Inter', -apple-system, sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
+            background-color: var(--m-bg);
+            color: var(--m-text);
             min-height: 100vh;
+            padding-bottom: calc(var(--m-nav-h) + 32px);
         }
-        .offline-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #111827;
-            border: 1px solid #1f2937;
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 12px;
+
+        /* Top App Bar */
+        .m-appbar {
+            position: sticky; top: 0; z-index: 900;
+            background: rgba(11, 15, 25, 0.94);
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--m-border);
         }
-        .offline-title {
-            font-size: 14px;
-            font-weight: 800;
-            color: #38bdf8;
-            letter-spacing: 0.5px;
+        .m-appbar-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; gap: 10px;
         }
-        .offline-badge {
-            background: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
+        .m-brand {
+            width: 38px; height: 38px; border-radius: 11px; background: #ffffff;
+            display: grid; place-items: center; padding: 3px;
+            border: 1px solid rgba(96, 165, 250, 0.4);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            flex-shrink: 0;
         }
+        .m-brand img { width: 100%; height: 100%; object-fit: contain; }
+        .m-titles { flex: 1; min-width: 0; }
+        .m-eyebrow {
+            display: flex; align-items: center; gap: 6px; font-size: 10.5px;
+            font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .m-live-dot {
+            width: 7px; height: 7px; border-radius: 50%; background: #f59e0b;
+            box-shadow: 0 0 8px #f59e0b; animation: pulseDot 2s infinite;
+        }
+        @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .m-title {
+            font-size: 14px; font-weight: 800; color: #ffffff;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .m-actions { display: flex; align-items: center; gap: 8px; }
+        .m-net-pill {
+            display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px;
+            border-radius: 999px; font-size: 10.5px; font-weight: 700;
+            background: rgba(245, 158, 11, 0.16); color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+        }
+        .m-net-dot { width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; }
+        .m-btn-sos {
+            background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff;
+            border: none; border-radius: 10px; padding: 5px 10px; font-size: 11px;
+            font-weight: 800; cursor: pointer; letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Container & Cards */
+        .m-container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
         .pdt-card {
-            background: #111827;
-            border: 1px solid #1f2937;
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 12px;
+            background: var(--m-card); border: 1px solid var(--m-border);
+            border-radius: 16px; padding: 14px; box-shadow: 0 8px 24px -10px rgba(0,0,0,0.5);
         }
         .pdt-label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #94a3b8;
-            margin-bottom: 6px;
-            text-transform: uppercase;
+            font-size: 11px; font-weight: 700; color: var(--m-text-2);
+            margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; justify-content: space-between; align-items: center;
         }
         .pdt-select, .pdt-input {
-            width: 100%;
-            background: #1e293b;
-            border: 1.5px solid #334155;
-            color: #f8fafc;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            outline: none;
-            box-sizing: border-box;
+            width: 100%; background: #0f172a; border: 1.5px solid #334155;
+            color: #f8fafc; padding: 12px; border-radius: 12px; font-size: 14px;
+            font-weight: 600; outline: none; transition: border-color .2s ease;
         }
         .pdt-select:focus, .pdt-input:focus {
             border-color: #38bdf8;
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
         }
+
+        /* User Profile Bar */
+        .user-chip-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--m-border); border-radius: 14px;
+        }
+        .user-chip-info { display: flex; align-items: center; gap: 10px; }
+        .user-avatar-badge {
+            width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #fff;
+        }
+        .user-chip-name { font-size: 13px; font-weight: 700; color: #f1f5f9; }
+        .user-chip-sub { font-size: 10.5px; color: #94a3b8; }
+
+        /* Scanner Box */
         .pdt-scan-box {
             border: 2px solid #2563eb;
-            background: rgba(37, 99, 235, 0.08);
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 12px;
+            background: linear-gradient(180deg, rgba(37, 99, 235, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border-radius: 16px; padding: 16px;
+            box-shadow: 0 10px 30px -10px rgba(37, 99, 235, 0.3);
         }
         .pdt-scan-input {
-            width: 100%;
-            background: #0f172a;
-            border: 2px solid #38bdf8;
-            color: #ffffff;
-            font-size: 18px;
-            font-weight: 800;
-            padding: 14px;
-            border-radius: 8px;
-            letter-spacing: 1px;
-            box-sizing: border-box;
-            outline: none;
+            width: 100%; background: #0b0f19; border: 2px solid #38bdf8;
+            color: #ffffff; font-size: 19px; font-weight: 800; padding: 14px 16px;
+            border-radius: 12px; letter-spacing: 1.5px; outline: none;
+            box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+            transition: all .2s ease;
         }
-        .btn-action-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
+        .pdt-scan-input:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.45);
         }
+        .btn-action-row { display: flex; gap: 10px; margin-top: 12px; }
         .btn-pdt-submit {
-            flex: 2;
-            background: #2563eb;
-            color: #ffffff;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
+            flex: 2; height: 46px; border-radius: 12px; border: none;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #ffffff; font-weight: 700; font-size: 14px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 8px 20px -6px rgba(37, 99, 235, 0.6);
         }
+        .btn-pdt-submit:active { transform: scale(0.98); }
         .btn-pdt-sync {
-            flex: 1;
-            background: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-            border: 1.5px solid #10b981;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
+            flex: 1; height: 46px; border-radius: 12px;
+            background: rgba(16, 185, 129, 0.16); color: #10b981;
+            border: 1.5px solid #10b981; font-weight: 700; font-size: 13px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
         }
+        .btn-pdt-sync:active { transform: scale(0.98); }
+
+        /* History Queue */
         .history-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            padding: 10px 14px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: rgba(30, 41, 59, 0.6); border: 1px solid var(--m-border);
+            padding: 10px 12px; border-radius: 12px; display: flex;
+            justify-content: space-between; align-items: center;
         }
-        .history-bc {
-            font-size: 13px;
-            font-weight: 700;
-            color: #f1f5f9;
-        }
-        .history-sub {
-            font-size: 11px;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
+        .history-bc { font-size: 13px; font-weight: 800; color: #38bdf8; font-family: monospace; }
+        .history-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
         .badge-pending {
-            background: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 4px;
+            background: rgba(245, 158, 11, 0.2); color: #fbbf24;
+            font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
             border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        /* 5-Tab Bottom Nav */
+        .m-bottom-nav {
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 950;
+            height: var(--m-nav-h);
+            padding: 0 8px var(--m-safe-b);
+            display: flex; justify-content: space-around; align-items: center;
+            background: rgba(15, 23, 42, 0.96);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--m-border);
+            border-radius: 22px 22px 0 0;
+            box-shadow: 0 -8px 25px rgba(0,0,0,0.4);
+        }
+        .m-nav-item {
+            color: var(--m-text-2); text-decoration: none; font-size: 11px; font-weight: 600;
+            display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1;
+            position: relative; cursor: pointer; border: none; background: none;
+        }
+        .m-nav-item.active { color: #60a5fa; }
+        .m-nav-badge {
+            position: absolute; top: -4px; right: 20%;
+            background: #ef4444; color: #fff; font-size: 10px; font-weight: 800;
+            padding: 1px 6px; border-radius: 999px; line-height: 1.2;
+        }
+
+        /* Center Scan Button */
+        .m-nav-item.m-scan-action {
+            top: -18px; color: #fff;
+        }
+        .m-scan-btn {
+            position: relative; width: 58px; height: 58px; border-radius: 50%;
+            display: grid; place-items: center; color: #fff;
+            background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+            box-shadow: 0 10px 22px -6px rgba(16, 185, 129, 0.75), 0 0 0 5px var(--m-bg);
+            transition: transform .2s ease;
+        }
+        .m-scan-btn::before {
+            content: ''; position: absolute; inset: -4px; border-radius: 50%;
+            border: 2px solid rgba(16, 185, 129, 0.5);
+            animation: mRing 2.4s ease-out infinite;
+        }
+        @keyframes mRing {
+            0% { transform: scale(0.92); opacity: 0.9; }
+            50% { transform: scale(1.08); opacity: 0.3; }
+            100% { transform: scale(0.92); opacity: 0.9; }
+        }
+        .m-scan-action:active .m-scan-btn { transform: scale(0.9); }
+        .m-scan-action span { margin-top: 2px; font-weight: 700; color: #ffffff; }
+
+        /* Modal Overlay */
+        .m-modal-overlay {
+            position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.7);
+            -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+            display: none; align-items: flex-end; justify-content: center;
+        }
+        .m-modal-overlay.show { display: flex; }
+        .m-modal-sheet {
+            width: 100%; max-width: 480px; background: var(--m-surface);
+            border-top: 1px solid var(--m-border); border-radius: 24px 24px 0 0;
+            padding: 20px 18px calc(24px + var(--m-safe-b)); box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
+            animation: slideUp .25s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .m-modal-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+        }
+        .m-modal-title { font-size: 16px; font-weight: 800; color: #ffffff; }
+        .m-modal-close {
+            background: rgba(255,255,255,0.1); border: none; color: #94a3b8;
+            width: 28px; height: 28px; border-radius: 50%; font-size: 14px;
+            font-weight: 800; cursor: pointer; display: grid; place-items: center;
+        }
+        .btn-logout {
+            width: 100%; height: 46px; border-radius: 12px; border: none;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #ffffff; font-weight: 700; font-size: 14px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px;
+            box-shadow: 0 8px 20px -6px rgba(239, 68, 68, 0.5);
         }
     </style>
 </head>
 <body>
 
-    <!-- TOP HEADER -->
-    <div class="offline-header">
+    <!-- ==================== TOP APP BAR ==================== -->
+    <header class="m-appbar">
+        <div class="m-appbar-row">
+            <a href="index.html" class="m-brand" title="GT Barcode System">
+                <img src="assets/img/Logo_Aplikasi.png" alt="GT">
+            </a>
+            <div class="m-titles">
+                <div class="m-eyebrow">
+                    <span class="m-live-dot"></span>
+                    <span id="barShift">GTBS MOBILE &bull; Shift 1</span>
+                </div>
+                <div class="m-title" id="barStationTitle">Terminal Scanner PDT</div>
+            </div>
+            <div class="m-actions">
+                <span class="m-net-pill" id="mNetBadge">
+                    <span class="m-net-dot"></span>
+                    <span>Offline (PDT)</span>
+                </span>
+                <button type="button" class="m-btn-sos" onclick="triggerSos()" title="Darurat K3">
+                    SOS
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="m-container">
+        <!-- User Profile Chip -->
+        <div class="user-chip-bar">
+            <div class="user-chip-info">
+                <div class="user-avatar-badge" id="userInitial">OP</div>
+                <div>
+                    <div class="user-chip-name" id="userFullName">Operator Lapangan</div>
+                    <div class="user-chip-sub" id="userMetaText">NIK: OP-CUR-01 &bull; Dept Curing</div>
+                </div>
+            </div>
+            <button type="button" onclick="openAccountModal()" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; border-radius: 8px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                Profil
+            </button>
+        </div>
+
+        <!-- STASIUN KERJA SELEKTOR -->
+        <div class="pdt-card">
+            <div class="pdt-label">
+                <span>Stasiun Kerja / Departemen</span>
+                <span id="txtDeptBadge" style="color: #38bdf8;">DEPT CURING</span>
+            </div>
+            <select class="pdt-select" id="selStation" onchange="onStationChanged()">
+                <option value="CURING" selected>Dept Curing - Curing Press & Cavity Ban</option>
+                <option value="BUILDING">Dept Building - Mesin TBM & Green Tire</option>
+                <option value="MIXING">Dept Material - Penimbangan Compound Ban</option>
+                <option value="CALENDERING">Dept Material - Calendering Cord Fabric</option>
+                <option value="FINAL_INSPECTION">Dept QC - Final Inspection & Grading</option>
+                <option value="WAREHOUSE">Dept Warehouse - Smart Rack Lokasi Rak</option>
+                <option value="REPAIR">Dept Curing - Repair Tire Finishing</option>
+            </select>
+        </div>
+
+        <!-- PARAMETER DINAMIS STASIUN -->
+        <div class="pdt-card" id="cardParams">
+            <div class="pdt-label" id="lblParamTitle">PARAMETER STASIUN CURING</div>
+
+            <!-- Curing / Repair -->
+            <div id="grpCuring" style="display: flex; gap: 8px;">
+                <div style="flex: 1;">
+                    <span style="font-size: 10px; color: #94a3b8; font-weight: 700;">NOMOR CAVITY</span>
+                    <select class="pdt-select" id="selCavity" style="margin-top: 4px;">
+                        <option value="CAV-A01">Cavity A-01</option>
+                        <option value="CAV-A02">Cavity A-02</option>
+                        <option value="CAV-A08" selected>Cavity A-08</option>
+                        <option value="CAV-B01">Cavity B-01</option>
+                        <option value="CAV-B05">Cavity B-05</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <span style="font-size: 10px; color: #94a3b8; font-weight: 700;">DEFECT / SCRAP</span>
+                    <select class="pdt-select" id="selDefect" style="margin-top: 4px;">
+                        <option value="NORMAL" selected>NORMAL (Pass)</option>
+                        <option value="DEF_BLISTER">Blister / Gelembung</option>
+                        <option value="DEF_BARE">Bare Curing</option>
+                        <option value="DEF_CRACK">Crack Sidewall</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Material / Mixing -->
+            <div id="grpMaterial" style="display: none; gap: 8px;">
+                <div style="flex: 1.5;">
+                    <span style="font-size: 10px; color: #94a3b8; font-weight: 700;">COMPOUND TIRE</span>
+                    <select class="pdt-select" id="selCompound" style="margin-top: 4px;">
+                        <option value="CMP-TREAD-PCR">CMP Tread PCR-01</option>
+                        <option value="CMP-SIDE-SUV">CMP Sidewall SUV-02</option>
+                        <option value="CMP-INNER-LTR">CMP Innerliner LTR</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <span style="font-size: 10px; color: #94a3b8; font-weight: 700;">BOBOT (KG)</span>
+                    <input type="number" class="pdt-input" id="inpWeight" value="50.0" step="0.5" style="margin-top: 4px;">
+                </div>
+            </div>
+
+            <!-- Building -->
+            <div id="grpBuilding" style="display: none; gap: 8px;">
+                <div style="flex: 1.5;">
+                    <span style="font-size: 10px; color: #94a3b8; font-weight: 700;">SPESIFIKASI BAN</span>
+                    <select class="pdt-select" id="selSpec" style="margin-top: 4px;">
+                        <option value="185/65 R15 Champiro ECO">185/65 R15 Champiro ECO</option>
+                        <option value="205/55 R16 Savero SUV">205/55 R16 Savero SUV</option>
+                        <option value="195/70 R14 Maxmiler Pro">195/70 R14 Maxmiler Pro</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <span style="font-size: 10px; color: #94a3b8; font-weight: 700;">MESIN TBM</span>
+                    <input type="text" class="pdt-input" id="inpMachine" value="TBM-02" style="margin-top: 4px;">
+                </div>
+            </div>
+
+            <!-- QC Final Inspection -->
+            <div id="grpInspection" style="display: none;">
+                <span style="font-size: 10px; color: #94a3b8; font-weight: 700;">GRADE QC BAN</span>
+                <select class="pdt-select" id="selQcGrade" style="margin-top: 4px;">
+                    <option value="GRADE_A" selected>Grade A (Lolos Ekspor)</option>
+                    <option value="GRADE_B">Grade B (Pasar Domestik)</option>
+                    <option value="REWORK">Rework / Perbaikan Finishing</option>
+                    <option value="SCRAP">Scrap / Afkir</option>
+                </select>
+            </div>
+
+            <!-- Warehouse -->
+            <div id="grpWarehouse" style="display: none;">
+                <span style="font-size: 10px; color: #94a3b8; font-weight: 700;">LOKASI RAK SMART ROUTING</span>
+                <input type="text" class="pdt-input" id="inpRackCode" placeholder="Scan / Ketik Lokasi Rak (RAK-A01)" value="RAK-A01" style="margin-top: 4px;">
+            </div>
+        </div>
+
+        <!-- SCANNER INPUT BOX -->
+        <div class="pdt-scan-box">
+            <div class="pdt-label" style="color: #38bdf8;">
+                <span>INPUT PEMINDAI BARCODE (PDT SCAN)</span>
+                <span style="font-size: 10px; color: #60a5fa;">LASER READY</span>
+            </div>
+            <input type="text" class="pdt-scan-input" id="inpBarcode" placeholder="Scan Barcode Di Sini..." autofocus autocomplete="off">
+            <div class="btn-action-row">
+                <button type="button" class="btn-pdt-submit" onclick="submitScan()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+                    <span>SIMPAN SCAN (ROOM DB)</span>
+                </button>
+                <button type="button" class="btn-pdt-sync" onclick="syncServer()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12A9 9 0 0 1 18.5 5.8L21 8"/><path d="M3 21v-5h5M21 3v5h-5"/></svg>
+                    <span>SINKRON</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ANTREAN SCAN OFFLINE -->
         <div>
-            <div class="offline-title">🏭 GTBS &bull; MODE OFFLINE PDT</div>
-            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Penyimpanan Lokal: SQLite Room Database</div>
-        </div>
-        <div class="offline-badge" id="badgePendingCount">PENDING: 0</div>
-    </div>
-
-    <!-- STATION SELECTOR -->
-    <div class="pdt-card">
-        <div class="pdt-label">PILIH STASIUN KERJA DEPARTEMEN</div>
-        <select class="pdt-select" id="selStation" onchange="switchStationUI()">
-            <option value="MIXING_PRODUCED">MIXING (Dept Material)</option>
-            <option value="CALENDERING_PRODUCED">CALENDERING (Dept Material)</option>
-            <option value="BUILDING_GT_PRODUCED">BUILDING_GT (Dept Building)</option>
-            <option value="LORI_CURING_TRANSFER">LORI_CURING (Dept Building)</option>
-            <option value="CURING_PRESS_CURED">CURING_PRESS (Dept Curing)</option>
-            <option value="TIRE_REPAIRED">REPAIR (Dept Curing)</option>
-            <option value="FINAL_INSPECTION_RECORDED">FINAL_INSPECTION (Dept FI)</option>
-            <option value="WAREHOUSE_STORED">WAREHOUSE (Gudang Ban Jadi)</option>
-        </select>
-    </div>
-
-    <!-- CONTEXTUAL PARAMETERS -->
-    <div class="pdt-card" id="cardParams">
-        <div class="pdt-label" id="lblParamTitle">PARAMETER MATERIAL</div>
-        
-        <!-- Mixing / Calendering -->
-        <div id="grpMaterial" style="display: flex; gap: 8px;">
-            <select class="pdt-select" id="selCompound" style="flex: 2;">
-                <option value="CMP-TREAD-01">CMP-TREAD-01 (Tread PCR)</option>
-                <option value="CMP-SIDE-02">CMP-SIDE-02 (Sidewall)</option>
-                <option value="CMP-BASE-01">CMP-BASE-01 (Base)</option>
-                <option value="CMP-TBR-01">CMP-TBR-01 (Truck/Bus)</option>
-            </select>
-            <input type="number" step="0.1" class="pdt-input" id="inpWeight" placeholder="Kg" value="50.0" style="flex: 1;">
-        </div>
-
-        <!-- Building GT -->
-        <div id="grpBuilding" style="display: none; gap: 8px;">
-            <select class="pdt-select" id="selSpec" style="flex: 2;">
-                <option value="185/65 R15 ECO">185/65 R15 ECO</option>
-                <option value="225/65 R17 HP">225/65 R17 HP</option>
-                <option value="195/75 R16C LTR">195/75 R16C LTR</option>
-            </select>
-            <input type="text" class="pdt-input" id="inpMachine" placeholder="Mesin" value="TBM-01" style="flex: 1;">
-        </div>
-
-        <!-- Curing -->
-        <div id="grpCuring" style="display: none; gap: 8px;">
-            <select class="pdt-select" id="selCavity" style="flex: 1;">
-                <option value="LEFT">Cavity LEFT (Kiri)</option>
-                <option value="RIGHT">Cavity RIGHT (Kanan)</option>
-            </select>
-            <select class="pdt-select" id="selDefect" style="flex: 1;">
-                <option value="None">None (Normal)</option>
-                <option value="Blister">Blister</option>
-                <option value="Tread crack">Tread crack</option>
-            </select>
-        </div>
-
-        <!-- Final Inspection -->
-        <div id="grpInspection" style="display: none; gap: 8px;">
-            <select class="pdt-select" id="selQcGrade" style="flex: 1;">
-                <option value="PASS">PASS (Lolos QC)</option>
-                <option value="REPAIR">REPAIR</option>
-                <option value="SCRAP">SCRAP</option>
-            </select>
-            <input type="text" class="pdt-input" id="inpDefectNotes" placeholder="Catatan Cacat" style="flex: 1;">
-        </div>
-
-        <!-- Warehouse -->
-        <div id="grpWarehouse" style="display: none;">
-            <input type="text" class="pdt-input" id="inpRackCode" placeholder="Scan / Ketik Lokasi Rak (RAK-A01)" value="RAK-A01">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Antrean Scan Di Memori PDT</span>
+                <span class="badge-pending" id="badgePendingCount">PENDING: 0</span>
+            </div>
+            <div id="historyList" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
     </div>
 
-    <!-- SCANNER INPUT -->
-    <div class="pdt-scan-box">
-        <div class="pdt-label" style="color: #38bdf8;">INPUT PEMINDAI BARCODE (PDT SCAN)</div>
-        <input type="text" class="pdt-scan-input" id="inpBarcode" placeholder="Scan Barcode Di Sini..." autofocus autocomplete="off">
-        <div class="btn-action-row">
-            <button class="btn-pdt-submit" onclick="submitScan()">SIMPAN SCAN (ROOM DB)</button>
-            <button class="btn-pdt-sync" onclick="syncServer()">SINKRON</button>
+    <!-- ==================== BOTTOM NAVIGATION BAR (5 TAB) ==================== -->
+    <nav class="m-bottom-nav">
+        <!-- 1. HOME -->
+        <a href="#top" class="m-nav-item" onclick="window.scrollTo({top:0, behavior:'smooth'}); return false;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>
+            <span>Home</span>
+        </a>
+
+        <!-- 2. BARCODE (ACTIVE) -->
+        <a href="javascript:void(0)" class="m-nav-item active" onclick="focusScanInput()">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6v12M7 6v12M11 6v12M14 6v12M17 6v12M20 6v12"/><path d="M2 4h3M19 4h3M2 20h3M19 20h3" opacity=".55"/></svg>
+            <span class="m-nav-badge" id="mNavBadgeCount">0</span>
+            <span>Barcode</span>
+        </a>
+
+        <!-- 3. TOMBOL SCAN DI TENGAH (CENTER FLOATING ACTION BUTTON) -->
+        <button type="button" class="m-nav-item m-scan-action armed" onclick="focusScanInput()" title="Trigger Scanner PDT">
+            <div class="m-scan-btn">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+            </div>
+            <span>Scan</span>
+        </button>
+
+        <!-- 4. MESSAGE -->
+        <a href="javascript:void(0)" class="m-nav-item" onclick="openMessageModal()">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>
+            <span>Message</span>
+        </a>
+
+        <!-- 5. AKUN -->
+        <a href="javascript:void(0)" class="m-nav-item" onclick="openAccountModal()">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            <span>Akun</span>
+        </a>
+    </nav>
+
+    <!-- ==================== MODAL AKUN & LOGOUT ==================== -->
+    <div class="m-modal-overlay" id="accountModal" onclick="if(event.target===this)closeAccountModal()">
+        <div class="m-modal-sheet">
+            <div class="m-modal-header">
+                <div class="m-modal-title">Profil & Sesi PDT</div>
+                <button type="button" class="m-modal-close" onclick="closeAccountModal()">&times;</button>
+            </div>
+            <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--m-border); border-radius: 14px; padding: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <div class="user-avatar-badge" id="modalUserBadge" style="width: 44px; height: 44px; font-size: 16px;">OP</div>
+                    <div>
+                        <div style="font-size: 15px; font-weight: 800; color: #fff;" id="modalUserName">Operator Curing Press</div>
+                        <div style="font-size: 12px; color: #94a3b8;" id="modalUserNik">NIK: OP-CUR-01</div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+                    <div style="background: rgba(15, 23, 42, 0.6); padding: 8px 10px; border-radius: 8px;">
+                        <span style="color: #94a3b8; display: block; font-size: 10px;">JABATAN</span>
+                        <b style="color: #60a5fa;" id="modalUserRole">Operator Lapangan</b>
+                    </div>
+                    <div style="background: rgba(15, 23, 42, 0.6); padding: 8px 10px; border-radius: 8px;">
+                        <span style="color: #94a3b8; display: block; font-size: 10px;">SHIFT AKTIF</span>
+                        <b style="color: #fbbf24;" id="modalUserShift">Shift 1 (Pagi)</b>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-logout" onclick="handleLogout()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="m10 17-5-5 5-5M5 12h11"/></svg>
+                <span>Keluar Akun (Logout)</span>
+            </button>
         </div>
     </div>
 
-    <!-- RECENT OFFLINE SCANS -->
-    <div style="font-size: 12px; font-weight: 700; color: #94a3b8; margin: 8px 0;">ANTREAN SCAN OFFLINE DI MEMORI PDT</div>
-    <div id="historyList"></div>
+    <!-- ==================== MODAL PESAN & K3 ==================== -->
+    <div class="m-modal-overlay" id="messageModal" onclick="if(event.target===this)closeMessageModal()">
+        <div class="m-modal-sheet">
+            <div class="m-modal-header">
+                <div class="m-modal-title">Pesan Hambatan & K3</div>
+                <button type="button" class="m-modal-close" onclick="closeMessageModal()">&times;</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid var(--m-border); border-radius: 12px; padding: 12px;">
+                    <div style="font-size: 13px; font-weight: 700; color: #fbbf24;">Broadcast Shift Pabrik</div>
+                    <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 4px;">Semua stasiun PDT pastikan melakukan pengecekan sensor laser sebelum operasional shift dimulai.</div>
+                </div>
+                <button type="button" onclick="alert('Laporan Hambatan Mesin (4M) tersimpan di memori offline.'); closeMessageModal();" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid #3b82f6; background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-weight: 700; font-size: 13px; cursor: pointer;">
+                    + Buat Laporan Hambatan Mesin (4M)
+                </button>
+            </div>
+        </div>
+    </div>
 
+    <!-- ==================== SCRIPTS ==================== -->
     <script>
-        let localHistory = [];
+        let currentSession = null;
 
-        function switchStationUI() {
+        window.addEventListener('DOMContentLoaded', function() {
+            initSessionData();
+            refreshPendingCount();
+            renderRecentScans();
+            focusScanInput();
+        });
+
+        function initSessionData() {
+            if (window.AndroidPDT && typeof window.AndroidPDT.getSessionJson === 'function') {
+                try {
+                    const raw = window.AndroidPDT.getSessionJson();
+                    currentSession = JSON.parse(raw);
+                } catch(e) {}
+            }
+            if (!currentSession || !currentSession.isLoggedIn) {
+                try {
+                    const localRaw = localStorage.getItem('gtbs_offline_user');
+                    if (localRaw) currentSession = JSON.parse(localRaw);
+                } catch(e) {}
+            }
+
+            if (currentSession && currentSession.fullName) {
+                document.getElementById('userFullName').innerText = currentSession.fullName;
+                const ini = currentSession.fullName.substring(0, 2).toUpperCase();
+                document.getElementById('userInitial').innerText = ini;
+                document.getElementById('modalUserBadge').innerText = ini;
+                document.getElementById('modalUserName').innerText = currentSession.fullName;
+                document.getElementById('modalUserNik').innerText = 'NIK: ' + (currentSession.nik || 'OPERATOR');
+                document.getElementById('modalUserRole').innerText = (currentSession.role || 'Operator').toUpperCase();
+                
+                const shiftNum = currentSession.shift || 1;
+                document.getElementById('barShift').innerText = 'GTBS MOBILE \u2022 Shift ' + shiftNum;
+                document.getElementById('modalUserShift').innerText = 'Shift ' + shiftNum;
+                document.getElementById('userMetaText').innerText = 'NIK: ' + (currentSession.nik || 'OP-01') + ' \u2022 ' + (currentSession.role || 'Operator');
+
+                if (currentSession.stationCode) {
+                    const sel = document.getElementById('selStation');
+                    for (let i = 0; i < sel.options.length; i++) {
+                        if (sel.options[i].value === currentSession.stationCode) {
+                            sel.selectedIndex = i;
+                            break;
+                        }
+                    }
+                    onStationChanged();
+                }
+            }
+        }
+
+        function onStationChanged() {
             const st = document.getElementById('selStation').value;
+            if (window.AndroidPDT && typeof window.AndroidPDT.setStationCode === 'function') {
+                window.AndroidPDT.setStationCode(st);
+            }
+
+            document.getElementById('grpCuring').style.display = 'none';
             document.getElementById('grpMaterial').style.display = 'none';
             document.getElementById('grpBuilding').style.display = 'none';
-            document.getElementById('grpCuring').style.display = 'none';
             document.getElementById('grpInspection').style.display = 'none';
             document.getElementById('grpWarehouse').style.display = 'none';
 
             if (st.includes('MIXING') || st.includes('CALENDERING')) {
                 document.getElementById('grpMaterial').style.display = 'flex';
-                document.getElementById('lblParamTitle').innerText = 'PARAMETER MATERIAL (COMPOUND & BERAT)';
-            } else if (st.includes('BUILDING') || st.includes('LORI')) {
+                document.getElementById('lblParamTitle').innerText = 'PARAMETER MATERIAL COMPOUND (BOBOT KG)';
+                document.getElementById('txtDeptBadge').innerText = 'DEPT MATERIAL';
+                document.getElementById('barStationTitle').innerText = 'Stasiun Material & Mixing';
+            } else if (st.includes('BUILDING')) {
                 document.getElementById('grpBuilding').style.display = 'flex';
                 document.getElementById('lblParamTitle').innerText = 'PARAMETER PERAKITAN TBM (UKURAN & MESIN)';
+                document.getElementById('txtDeptBadge').innerText = 'DEPT BUILDING';
+                document.getElementById('barStationTitle').innerText = 'Stasiun Building PCR/SUV';
             } else if (st.includes('CURING') || st.includes('REPAIR')) {
                 document.getElementById('grpCuring').style.display = 'flex';
                 document.getElementById('lblParamTitle').innerText = 'PARAMETER CURING (CAVITY & DEFECT)';
+                document.getElementById('txtDeptBadge').innerText = 'DEPT CURING';
+                document.getElementById('barStationTitle').innerText = 'Stasiun Curing Press Ban';
             } else if (st.includes('FINAL_INSPECTION')) {
-                document.getElementById('grpInspection').style.display = 'flex';
+                document.getElementById('grpInspection').style.display = 'block';
                 document.getElementById('lblParamTitle').innerText = 'PARAMETER QC INSPECTION (GRADE)';
+                document.getElementById('txtDeptBadge').innerText = 'FINAL INSPECTION';
+                document.getElementById('barStationTitle').innerText = 'Stasiun QC Final Inspection';
             } else if (st.includes('WAREHOUSE')) {
                 document.getElementById('grpWarehouse').style.display = 'block';
                 document.getElementById('lblParamTitle').innerText = 'SMART RACK ROUTING (LOKASI RAK)';
+                document.getElementById('txtDeptBadge').innerText = 'DEPT WAREHOUSE';
+                document.getElementById('barStationTitle').innerText = 'Stasiun Gudang & Alokasi Rak';
             }
-            document.getElementById('inpBarcode').focus();
+            focusScanInput();
+        }
+
+        function focusScanInput() {
+            const inp = document.getElementById('inpBarcode');
+            if (inp) {
+                inp.focus();
+                if (window.AndroidPDT) {
+                    window.AndroidPDT.triggerVibration(80);
+                    window.AndroidPDT.playSuccessBeep();
+                }
+            }
         }
 
         function submitScan() {
             const inp = document.getElementById('inpBarcode');
             const barcode = inp.value.trim().toUpperCase();
             if (!barcode) {
-                alert('Silakan scan atau masukkan barcode!');
+                if (window.AndroidPDT) {
+                    window.AndroidPDT.playErrorBeep();
+                    window.AndroidPDT.showToast('Silakan scan atau masukkan barcode!');
+                } else {
+                    alert('Silakan scan atau masukkan barcode!');
+                }
+                inp.focus();
                 return;
             }
 
@@ -307,45 +640,112 @@
             }
 
             // Save to native Android Room Database
-            if (window.AndroidPDT) {
+            if (window.AndroidPDT && typeof window.AndroidPDT.saveOfflineScan === 'function') {
                 window.AndroidPDT.saveOfflineScan(barcode, station, details, qty, status);
             }
 
-            localHistory.unshift({ barcode: barcode, station: station, details: details, time: new Date().toLocaleTimeString() });
+            // Local cache history for instant display
+            saveToLocalHistory(barcode, station, details);
+
             inp.value = '';
             inp.focus();
-            renderHistory();
+
+            setTimeout(refreshPendingCount, 200);
+            renderRecentScans();
         }
 
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-            localHistory.slice(0, 15).forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'history-card';
-                card.innerHTML = `
-                    <div>
-                        <div class="history-bc">${item.barcode}</div>
-                        <div class="history-sub">${item.station} &bull; ${item.details}</div>
-                    </div>
-                    <div class="badge-pending">PENDING (LOCAL)</div>
-                `;
-                list.appendChild(card);
+        function saveToLocalHistory(barcode, station, details) {
+            let hist = [];
+            try {
+                hist = JSON.parse(localStorage.getItem('gtbs_scan_history') || '[]');
+            } catch(e) {}
+            hist.unshift({
+                barcode: barcode,
+                station: station,
+                details: details,
+                time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
             });
+            if (hist.length > 20) hist.pop();
+            localStorage.setItem('gtbs_scan_history', JSON.stringify(hist));
+        }
 
-            if (window.AndroidPDT) {
-                document.getElementById('badgePendingCount').innerText = 'PENDING: ' + window.AndroidPDT.getPendingCount();
-            } else {
-                document.getElementById('badgePendingCount').innerText = 'PENDING: ' + localHistory.length;
+        function renderRecentScans() {
+            let hist = [];
+            try {
+                hist = JSON.parse(localStorage.getItem('gtbs_scan_history') || '[]');
+            } catch(e) {}
+
+            const c = document.getElementById('historyList');
+            if (!hist || hist.length === 0) {
+                c.innerHTML = '<div style="color: #64748b; font-size: 12px; text-align: center; padding: 18px 0;">Belum ada scan offline di memori PDT.</div>';
+                return;
             }
+
+            let html = '';
+            hist.slice(0, 5).forEach(item => {
+                html += `
+                    <div class="history-card">
+                        <div>
+                            <div class="history-bc">${item.barcode}</div>
+                            <div class="history-sub">${item.details} &bull; ${item.time}</div>
+                        </div>
+                        <span class="badge-pending">ROOM DB</span>
+                    </div>
+                `;
+            });
+            c.innerHTML = html;
         }
 
         function syncServer() {
-            if (window.AndroidPDT) {
+            if (window.AndroidPDT && typeof window.AndroidPDT.syncNow === 'function') {
                 window.AndroidPDT.syncNow();
-                window.AndroidPDT.showToast('Mencoba menyinkronkan data antrean offline...');
             } else {
-                alert('Mencoba sinkronisasi ke server...');
+                alert('Menyinkronkan data antrean offline...');
+            }
+        }
+
+        function refreshPendingCount() {
+            if (window.AndroidPDT && typeof window.AndroidPDT.getPendingCount === 'function') {
+                const count = window.AndroidPDT.getPendingCount();
+                document.getElementById('badgePendingCount').innerText = 'PENDING: ' + count;
+                document.getElementById('mNavBadgeCount').innerText = count;
+            }
+        }
+
+        function triggerSos() {
+            if (window.AndroidPDT) {
+                window.AndroidPDT.triggerVibration(400);
+                window.AndroidPDT.playErrorBeep();
+                window.AndroidPDT.showToast('DARURAT K3: Ambulans / Petugas K3 Pabrik Ban Dipanggil!');
+            } else {
+                alert('Panggilan Darurat K3: Hubungi Radio Chanel 5 Pabrik Ban GT.');
+            }
+        }
+
+        function openAccountModal() {
+            document.getElementById('accountModal').classList.add('show');
+        }
+
+        function closeAccountModal() {
+            document.getElementById('accountModal').classList.remove('show');
+        }
+
+        function openMessageModal() {
+            document.getElementById('messageModal').classList.add('show');
+        }
+
+        function closeMessageModal() {
+            document.getElementById('messageModal').classList.remove('show');
+        }
+
+        function handleLogout() {
+            if (confirm('Apakah Anda yakin ingin keluar dari akun ini?')) {
+                localStorage.removeItem('gtbs_offline_user');
+                if (window.AndroidPDT && typeof window.AndroidPDT.logout === 'function') {
+                    window.AndroidPDT.logout();
+                } else {
+                    window.location.replace('login.html');
+                }
             }
         }
 
@@ -354,44 +754,6 @@
                 submitScan();
             }
         });
-
-        window.onload = function() {
-            switchStationUI();
-            if (window.AndroidPDT) {
-                document.getElementById('badgePendingCount').innerText = 'PENDING: ' + window.AndroidPDT.getPendingCount();
-            }
-        };
     </script>
-
-    <!-- ==================== BOTTOM NAVIGATION BAR (5 TAB) ==================== -->
-    <nav class="m-bottom-nav" style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 950; height: 74px; background: rgba(17, 24, 39, 0.95); border-top: 1px solid rgba(148, 163, 184, 0.15); border-radius: 24px 24px 0 0; display: flex; justify-content: space-around; align-items: center; padding: 0 8px;">
-        <a href="index.html" class="m-nav-item" style="color: #94a3b8; text-decoration: none; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
-            <svg width="21" height="21" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span>Home</span>
-        </a>
-
-        <a href="index.html" class="m-nav-item active" style="color: #60a5fa; text-decoration: none; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
-            <svg width="21" height="21" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
-            <span>Barcode</span>
-        </a>
-
-        <button type="button" class="m-nav-item m-scan-action armed" onclick="document.getElementById('barcodeInput')?.focus(); if (window.AndroidPDT) { window.AndroidPDT.triggerVibration(100); window.AndroidPDT.playSuccessBeep(); }" style="background: none; border: none; position: relative; top: -18px; color: #f1f5f9; display: flex; flex-direction: column; align-items: center; flex: 1; cursor: pointer;">
-            <div style="width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #06b6d4); color: #fff; display: grid; place-items: center; box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.7);">
-                <svg width="26" height="26" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            </div>
-            <span style="font-size: 11px; font-weight: 700; margin-top: 4px;">Scan</span>
-        </button>
-
-        <a href="login.html" class="m-nav-item" onclick="if (window.AndroidPDT) window.AndroidPDT.showToast('Pesan & K3 membutuhkan koneksi server.'); return false;" style="color: #94a3b8; text-decoration: none; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
-            <svg width="21" height="21" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-            <span>Message</span>
-        </a>
-
-        <a href="login.html" class="m-nav-item" style="color: #94a3b8; text-decoration: none; font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
-            <svg width="21" height="21" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            <span>Akun</span>
-        </a>
-    </nav>
-
 </body>
 </html>

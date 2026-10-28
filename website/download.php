@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * ==============================================================================
  * SISTEM BARCODE PABRIK BAN (GTBS) - PT GAJAH TUNGGAL TBK
@@ -7,8 +7,8 @@
  * ==============================================================================
  */
 
-$hostIp = '192.168.1.100';
-$port = '8000';
+$hostIp = !empty($_SERVER["HTTP_HOST"]) ? explode(":", $_SERVER["HTTP_HOST"])[0] : "192.168.1.106";
+$port = !empty($_SERVER["SERVER_PORT"]) ? $_SERVER["SERVER_PORT"] : "8000";
 $apkUrl = "http://{$hostIp}:{$port}/GT_Barcode_System/website/gtbs-mobile.apk";
 $serverTargetUrl = "http://{$hostIp}:{$port}/GT_Barcode_System/website/login.php";
 $apkFile = __DIR__ . '/gtbs-mobile.apk';

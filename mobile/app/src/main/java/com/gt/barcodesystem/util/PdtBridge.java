@@ -31,6 +31,7 @@ public class PdtBridge {
     public interface BridgeEventListener {
         void onScanSavedLocally(String barcode, int pendingCount);
         void onSyncRequested();
+        void onLogoutRequested();
     }
 
     private BridgeEventListener listener;
@@ -48,6 +49,102 @@ public class PdtBridge {
         this.listener = listener;
     }
 
+    public SessionManager getSessionManager() {
+        return sessionManager;
+    }
+
+    @JavascriptInterface
+    public void saveUserSession(int userId, String nik, String username, String fullName, String role, int deptId, int sectionId, String stationCode) {
+        sessionManager.saveUserSession(
+                "token_pdt_" + System.currentTimeMillis(),
+                userId > 0 ? userId : 1,
+                nik != null ? nik : "OPERATOR",
+                username != null ? username : (nik != null ? nik : "operator"),
+                fullName != null ? fullName : "Operator PDT",
+                role != null ? role : "operator",
+                deptId > 0 ? deptId : 1,
+                sectionId > 0 ? sectionId : 1
+        );
+        if (stationCode != null && !stationCode.isEmpty()) {
+            sessionManager.setStationCode(stationCode);
+        }
+    }
+
+    @JavascriptInterface
+    public void syncWebSession(String fullName, String role, String currentUrl) {
+        if (fullName != null && !fullName.isEmpty()) {
+            sessionManager.saveUserSession(
+                    "token_web_" + System.currentTimeMillis(),
+                    sessionManager.getUserId() > 0 ? sessionManager.getUserId() : 1,
+                    sessionManager.getNik().isEmpty() ? "ONLINE_USER" : sessionManager.getNik(),
+                    sessionManager.getUsername().isEmpty() ? "online_user" : sessionManager.getUsername(),
+                    fullName,
+                    role != null && !role.isEmpty() ? role : "operator",
+                    sessionManager.getDeptId() > 0 ? sessionManager.getDeptId() : 1,
+                    sessionManager.getSectionId() > 0 ? sessionManager.getSectionId() : 1
+            );
+        }
+        if (currentUrl != null && !currentUrl.isEmpty() && !currentUrl.contains("login.php") && !currentUrl.contains("logout.php")) {
+            sessionManager.setLastUrl(currentUrl);
+        }
+    }
+
+    @JavascriptInterface
+    public boolean isLoggedIn() {
+        return sessionManager.isLoggedIn();
+    }
+
+    @JavascriptInterface
+    public String getSessionJson() {
+        if (!sessionManager.isLoggedIn()) {
+            return "{\"isLoggedIn\":false}";
+        }
+        String nik = escapeJson(sessionManager.getNik());
+        String username = escapeJson(sessionManager.getUsername());
+        String fullName = escapeJson(sessionManager.getFullName());
+        String role = escapeJson(sessionManager.getRole());
+        String stationCode = escapeJson(sessionManager.getStationCode());
+        int shift = ShiftHelper.getCurrentShift();
+
+        return String.format(Locale.ROOT,
+                "{\"isLoggedIn\":true,\"userId\":%d,\"nik\":\"%s\",\"username\":\"%s\",\"fullName\":\"%s\",\"role\":\"%s\",\"deptId\":%d,\"sectionId\":%d,\"stationCode\":\"%s\",\"shift\":%d}",
+                sessionManager.getUserId(),
+                nik,
+                username,
+                fullName,
+                role,
+                sessionManager.getDeptId(),
+                sessionManager.getSectionId(),
+                stationCode,
+                shift
+        );
+    }
+
+    @JavascriptInterface
+    public void logout() {
+        sessionManager.logout();
+        if (listener != null) {
+            listener.onLogoutRequested();
+        }
+    }
+
+    @JavascriptInterface
+    public String getStationCode() {
+        return sessionManager.getStationCode();
+    }
+
+    @JavascriptInterface
+    public void setStationCode(String stationCode) {
+        if (stationCode != null && !stationCode.isEmpty()) {
+            sessionManager.setStationCode(stationCode);
+        }
+    }
+
+    @JavascriptInterface
+    public int getCurrentShift() {
+        return ShiftHelper.getCurrentShift();
+    }
+
     @JavascriptInterface
     public void saveOfflineScan(String barcode, String stationCode, String details, double qty, String status) {
         if (barcode == null || barcode.trim().isEmpty()) {
@@ -62,13 +159,13 @@ public class PdtBridge {
 
                 OfflineScanEntity scan = new OfflineScanEntity();
                 scan.setBarcode(barcode.trim().toUpperCase());
-                scan.setActionType(stationCode != null ? stationCode : "PDT_SCAN");
+                scan.setActionType(stationCode != null ? stationCode : sessionManager.getStationCode());
                 scan.setDeptId(sessionManager.getDeptId() > 0 ? sessionManager.getDeptId() : 1);
                 scan.setSectionId(sessionManager.getSectionId() > 0 ? sessionManager.getSectionId() : 1);
                 scan.setQty(qty > 0 ? qty : 1.0);
                 scan.setUnit("Pcs");
                 scan.setOperatorId(sessionManager.getUserId() > 0 ? sessionManager.getUserId() : 1);
-                scan.setOperatorNik(sessionManager.getNik() != null ? sessionManager.getNik() : "OPERATOR");
+                scan.setOperatorNik(sessionManager.getNik() != null && !sessionManager.getNik().isEmpty() ? sessionManager.getNik() : "OPERATOR");
                 scan.setDetails(details != null ? details : "Scan Mode Lite PDT");
                 scan.setCreatedAt(currentTime);
                 scan.setShift(ShiftHelper.getCurrentShift());
@@ -151,5 +248,16 @@ public class PdtBridge {
         if (message != null) {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\b", "\\b")
+                .replace("\f", "\\f")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 }

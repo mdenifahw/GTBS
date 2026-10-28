@@ -16,6 +16,7 @@ public class SessionManager {
     private static final String KEY_DEPT_ID = "deptId";
     private static final String KEY_SECTION_ID = "sectionId";
     private static final String KEY_STATION_CODE = "stationCode";
+    private static final String KEY_LAST_URL = "lastVisitedUrl";
 
     private final SharedPreferences pref;
     private final SharedPreferences.Editor editor;
@@ -27,12 +28,12 @@ public class SessionManager {
 
     public void saveUserSession(String token, int userId, String nik, String username, String fullName, String role, int deptId, int sectionId) {
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
-        editor.putString(KEY_TOKEN, token);
+        editor.putString(KEY_TOKEN, token != null ? token : "");
         editor.putInt(KEY_USER_ID, userId);
-        editor.putString(KEY_NIK, nik);
-        editor.putString(KEY_USERNAME, username);
-        editor.putString(KEY_FULL_NAME, fullName);
-        editor.putString(KEY_ROLE, role);
+        editor.putString(KEY_NIK, nik != null ? nik : "");
+        editor.putString(KEY_USERNAME, username != null ? username : "");
+        editor.putString(KEY_FULL_NAME, fullName != null ? fullName : "");
+        editor.putString(KEY_ROLE, role != null ? role : "");
         editor.putInt(KEY_DEPT_ID, deptId);
         editor.putInt(KEY_SECTION_ID, sectionId);
         editor.apply();
@@ -75,12 +76,23 @@ public class SessionManager {
     }
 
     public String getStationCode() {
-        return pref.getString(KEY_STATION_CODE, "MIXING");
+        return pref.getString(KEY_STATION_CODE, "CURING");
     }
 
     public void setStationCode(String stationCode) {
         editor.putString(KEY_STATION_CODE, stationCode);
         editor.apply();
+    }
+
+    public String getLastUrl() {
+        return pref.getString(KEY_LAST_URL, "");
+    }
+
+    public void setLastUrl(String url) {
+        if (url != null && !url.contains("login.php") && !url.contains("logout.php") && !url.startsWith("file:///")) {
+            editor.putString(KEY_LAST_URL, url);
+            editor.apply();
+        }
     }
 
     public void logout() {

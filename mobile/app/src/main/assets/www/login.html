@@ -40,12 +40,19 @@
         .m-brand-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
         .m-brand-logo-wrap { display: flex; align-items: center; gap: 12px; }
         .m-logo-box {
-            width: 46px; height: 46px; border-radius: 14px;
+            width: 48px; height: 48px; border-radius: 14px;
             background: #ffffff;
             border: 1px solid rgba(96, 165, 250, 0.35);
-            display: grid; place-items: center; font-size: 20px;
+            display: grid; place-items: center;
+            padding: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
-        .m-brand-info h1 { font-size: 17px; font-weight: 800; color: #ffffff; }
+        .m-logo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .m-brand-info h1 { font-size: 17px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; }
         .m-brand-info p { font-size: 11px; font-weight: 600; color: var(--app-text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
         .m-shift-pill {
             display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
@@ -57,30 +64,36 @@
         .m-input-field {
             width: 100%; height: 48px; background: var(--app-input); border: 1px solid var(--app-border);
             border-radius: 14px; padding: 0 16px; font-size: 15px; color: #ffffff; font-weight: 500; outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+        .m-input-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
         }
         .m-btn-login {
             width: 100%; height: 48px; border-radius: 14px; border: none;
             background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: #ffffff; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
             box-shadow: 0 10px 24px -6px rgba(37, 99, 235, 0.65);
+            transition: transform .15s ease;
         }
+        .m-btn-login:active { transform: scale(0.98); }
         .m-quick-card {
-            background: rgba(17, 24, 39, 0.9); border: 1px solid var(--app-border); border-radius: 20px; padding: 16px;
+            background: rgba(17, 24, 39, 0.95); border: 1px solid var(--app-border); border-radius: 20px; padding: 16px;
         }
-        .m-quick-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; }
-        .m-filter-btn {
-            background: rgba(30, 41, 59, 0.8); border: 1px solid var(--app-border); color: #94a3b8;
-            padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
-        }
-        .m-filter-btn.active { background: #2563eb; color: #ffffff; }
-        .m-quick-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+        .m-quick-list { display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; }
         .m-account-item {
             display: flex; align-items: center; gap: 12px; padding: 10px 12px;
             background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 14px;
             text-decoration: none; color: var(--app-text); cursor: pointer;
+            transition: background .2s ease, border-color .2s ease;
+        }
+        .m-account-item:active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
         }
         .m-acc-badge {
-            width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+            width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
             font-size: 11px; font-weight: 800; color: #ffffff; flex-shrink: 0;
         }
         .m-acc-name { font-size: 13px; font-weight: 700; color: #f1f5f9; }
@@ -92,7 +105,9 @@
     <div class="m-brand-card">
         <div class="m-brand-header">
             <div class="m-brand-logo-wrap">
-                <div class="m-logo-box">🏭</div>
+                <div class="m-logo-box">
+                    <img src="assets/img/Logo_Aplikasi.png" alt="GT Logo">
+                </div>
                 <div class="m-brand-info">
                     <h1>GT BARCODE</h1>
                     <p>PDT Local-First Offline</p>
@@ -128,56 +143,133 @@
             <span style="font-size: 10.5px; color: #60a5fa; font-weight: 700;">Offline Ready</span>
         </div>
         <div class="m-quick-list">
-            <div class="m-account-item" onclick="quickSelect('SA-001', 'Super Admin')">
+            <div class="m-account-item" onclick="quickSelect('SA-001', 'Super Admin', 'super_admin', 'MIXING', 1, 1, 1)">
                 <div class="m-acc-badge" style="background: #3b82f6;">SA</div>
                 <div style="flex:1;">
                     <div class="m-acc-name">Super Admin (SA-001)</div>
                     <div class="m-acc-desc">Akses Penuh Semua Stasiun & Sinkronisasi</div>
                 </div>
-                <span>&rarr;</span>
+                <span style="color: #60a5fa; font-weight: 800;">&rarr;</span>
             </div>
-            <div class="m-account-item" onclick="quickSelect('OP-CUR-01', 'Operator Curing')">
-                <div class="m-acc-badge" style="background: #64748b;">OP</div>
+            <div class="m-account-item" onclick="quickSelect('OP-CUR-01', 'Operator Curing Press', 'operator', 'CURING', 4, 15, 2)">
+                <div class="m-acc-badge" style="background: #ef4444;">CUR</div>
                 <div style="flex:1;">
                     <div class="m-acc-name">Operator Curing Press (OP-CUR-01)</div>
-                    <div class="m-acc-desc">Stasiun Curing Press Ban</div>
+                    <div class="m-acc-desc">Stasiun Curing Press Ban & Cavity</div>
                 </div>
-                <span>&rarr;</span>
+                <span style="color: #60a5fa; font-weight: 800;">&rarr;</span>
             </div>
-            <div class="m-account-item" onclick="quickSelect('OP-BLD-01', 'Operator Building')">
+            <div class="m-account-item" onclick="quickSelect('OP-BLD-01', 'Operator Building PCR', 'operator', 'BUILDING', 3, 10, 3)">
                 <div class="m-acc-badge" style="background: #10b981;">BLD</div>
                 <div style="flex:1;">
                     <div class="m-acc-name">Operator Building PCR (OP-BLD-01)</div>
-                    <div class="m-acc-desc">Stasiun Perakitan Green Tire</div>
+                    <div class="m-acc-desc">Stasiun Perakitan Green Tire TBM</div>
                 </div>
-                <span>&rarr;</span>
+                <span style="color: #60a5fa; font-weight: 800;">&rarr;</span>
             </div>
-            <div class="m-account-item" onclick="quickSelect('OP-WH-01', 'Operator Gudang')">
+            <div class="m-account-item" onclick="quickSelect('OP-MAT-01', 'Operator Mixing Ban', 'operator', 'MIXING', 2, 5, 4)">
+                <div class="m-acc-badge" style="background: #8b5cf6;">MAT</div>
+                <div style="flex:1;">
+                    <div class="m-acc-name">Operator Mixing Ban (OP-MAT-01)</div>
+                    <div class="m-acc-desc">Stasiun Penimbangan Compound Ban</div>
+                </div>
+                <span style="color: #60a5fa; font-weight: 800;">&rarr;</span>
+            </div>
+            <div class="m-account-item" onclick="quickSelect('OP-WH-01', 'Operator Gudang Bahan', 'operator', 'WAREHOUSE', 1, 1, 5)">
                 <div class="m-acc-badge" style="background: #f59e0b;">WH</div>
                 <div style="flex:1;">
                     <div class="m-acc-name">Operator Gudang Bahan (OP-WH-01)</div>
                     <div class="m-acc-desc">Stasiun Penerima & Pengirim Rak</div>
                 </div>
-                <span>&rarr;</span>
+                <span style="color: #60a5fa; font-weight: 800;">&rarr;</span>
+            </div>
+            <div class="m-account-item" onclick="quickSelect('OP-FI-01', 'QC Final Inspection', 'operator', 'FINAL_INSPECTION', 5, 20, 6)">
+                <div class="m-acc-badge" style="background: #06b6d4;">QC</div>
+                <div style="flex:1;">
+                    <div class="m-acc-name">QC Final Inspection (OP-FI-01)</div>
+                    <div class="m-acc-desc">Stasiun Pemeriksaan Kualitas & Grading</div>
+                </div>
+                <span style="color: #60a5fa; font-weight: 800;">&rarr;</span>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+window.addEventListener('DOMContentLoaded', function() {
+    if (window.AndroidPDT && typeof window.AndroidPDT.isLoggedIn === 'function') {
+        if (window.AndroidPDT.isLoggedIn()) {
+            window.location.replace('index.html');
+        }
+    }
+});
+
 function handleOfflineLogin(e) {
     if (e) e.preventDefault();
     const u = document.getElementById('inpUsername').value.trim() || 'OP-CUR-01';
-    localStorage.setItem('gtbs_offline_user', u);
-    if (window.AndroidPDT && typeof window.AndroidPDT.showToast === 'function') {
-        window.AndroidPDT.showToast('Masuk sebagai ' + u);
+    
+    let role = 'operator';
+    let station = 'CURING';
+    let fullName = 'Operator ' + u;
+    let deptId = 4;
+    let sectionId = 15;
+    let userId = 10;
+
+    if (u.includes('SA') || u.includes('ADMIN')) {
+        role = 'super_admin';
+        station = 'MIXING';
+        fullName = 'Super Admin';
+        deptId = 1;
+        sectionId = 1;
+        userId = 1;
+    } else if (u.includes('BLD')) {
+        station = 'BUILDING';
+        fullName = 'Operator Building PCR';
+        deptId = 3;
+        sectionId = 10;
+    } else if (u.includes('MAT')) {
+        station = 'MIXING';
+        fullName = 'Operator Mixing Ban';
+        deptId = 2;
+        sectionId = 5;
+    } else if (u.includes('WH')) {
+        station = 'WAREHOUSE';
+        fullName = 'Operator Gudang Bahan';
+        deptId = 1;
+        sectionId = 1;
+    } else if (u.includes('FI')) {
+        station = 'FINAL_INSPECTION';
+        fullName = 'Petugas QC Final Inspection';
+        deptId = 5;
+        sectionId = 20;
     }
-    window.location.href = 'index.html';
+
+    saveAndEnter(userId, u, u, fullName, role, deptId, sectionId, station);
 }
 
-function quickSelect(nik, role) {
+function quickSelect(nik, fullName, role, station, deptId, sectionId, userId) {
     document.getElementById('inpUsername').value = nik;
-    handleOfflineLogin();
+    saveAndEnter(userId, nik, nik, fullName, role, deptId, sectionId, station);
+}
+
+function saveAndEnter(userId, nik, username, fullName, role, deptId, sectionId, station) {
+    if (window.AndroidPDT && typeof window.AndroidPDT.saveUserSession === 'function') {
+        window.AndroidPDT.saveUserSession(userId, nik, username, fullName, role, deptId, sectionId, station);
+    }
+    localStorage.setItem('gtbs_offline_user', JSON.stringify({
+        userId: userId,
+        nik: nik,
+        username: username,
+        fullName: fullName,
+        role: role,
+        deptId: deptId,
+        sectionId: sectionId,
+        station: station
+    }));
+    if (window.AndroidPDT && typeof window.AndroidPDT.showToast === 'function') {
+        window.AndroidPDT.showToast('Login berhasil: ' + fullName);
+    }
+    window.location.replace('index.html');
 }
 </script>
 </body>
