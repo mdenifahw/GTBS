@@ -19,7 +19,10 @@ public class DowntimeReportRequest {
     private String description;
 
     @SerializedName("reported_by")
-    private int reportedBy;
+    private String reportedBy;
+
+    @SerializedName("operator_nik")
+    private String operatorNik;
 
     public DowntimeReportRequest(String machineCode, int deptId, String downtimeType, int durationMinutes, String description, int reportedBy) {
         this.machineCode = machineCode;
@@ -27,7 +30,18 @@ public class DowntimeReportRequest {
         this.downtimeType = downtimeType;
         this.durationMinutes = durationMinutes;
         this.description = description;
-        this.reportedBy = reportedBy;
+        this.reportedBy = String.valueOf(reportedBy);
+        this.operatorNik = "OP-" + reportedBy;
+    }
+
+    public DowntimeReportRequest(String machineCode, int deptId, String downtimeType, int durationMinutes, String description, String operatorNik) {
+        this.machineCode = machineCode;
+        this.deptId = deptId;
+        this.downtimeType = downtimeType;
+        this.durationMinutes = durationMinutes;
+        this.description = description;
+        this.reportedBy = operatorNik != null && !operatorNik.isEmpty() ? operatorNik : "OPERATOR";
+        this.operatorNik = this.reportedBy;
     }
 
     public String getMachineCode() {
@@ -50,7 +64,11 @@ public class DowntimeReportRequest {
         return description;
     }
 
-    public int getReportedBy() {
+    public String getReportedBy() {
         return reportedBy;
+    }
+
+    public String getOperatorNik() {
+        return operatorNik;
     }
 }

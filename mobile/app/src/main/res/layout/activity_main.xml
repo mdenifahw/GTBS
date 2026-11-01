@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootMainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0b0f19">
@@ -17,46 +18,25 @@
         android:progressDrawable="@drawable/progress_bar_cyan"
         android:visibility="gone" />
 
-    <!-- OFFLINE STATUS BANNER -->
+    <!-- LEGACY OFFLINE BANNER (Hidden: replaced by unified 1:1 Web/Offline Appbar & Sync Desk) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardOfflineBanner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_margin="8dp"
-        android:visibility="gone"
-        app:cardBackgroundColor="#1e293b"
-        app:cardCornerRadius="8dp"
-        app:strokeColor="#f59e0b"
-        app:strokeWidth="1.5dp">
-
+        android:visibility="gone">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp">
-
+            android:orientation="horizontal">
             <TextView
                 android:id="@+id/tvOfflineBannerText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="MODE OFFLINE PDT (Lokal Room DB) • 0 Pending"
-                android:textColor="#f59e0b"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
+                android:layout_weight="1" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnBannerSync"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="SINKRON"
-                android:textColor="#10b981"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:layout_height="36dp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -74,21 +54,12 @@
             android:background="#0b0f19" />
     </FrameLayout>
 
-    <!-- FLOATING SERVER CONFIG BUTTON (Positioned cleanly above 5-tab Bottom Navigation bar) -->
+    <!-- LEGACY FLOATING SETTINGS (Hidden: cleanly accessible from Akun -> Pengaturan Server) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabSettings"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="82dp"
-        android:alpha="0.85"
-        android:contentDescription="Pengaturan Server"
-        app:backgroundTint="#1e293b"
-        app:elevation="4dp"
-        app:fabSize="mini"
-        app:srcCompat="@android:drawable/ic_menu_preferences"
-        app:tint="#38bdf8" />
+        android:visibility="gone"
+        app:srcCompat="@android:drawable/ic_menu_preferences" />
 
 </RelativeLayout>

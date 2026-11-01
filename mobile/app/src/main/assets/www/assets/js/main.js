@@ -1,4 +1,4 @@
-﻿// GTBS - Main JavaScript
+// GTBS - Main JavaScript
 
 document.addEventListener('DOMContentLoaded', () => {
     // Theme toggle
