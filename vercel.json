@@ -19,6 +19,22 @@
             "dest": "/website/assets/img/Logo_Aplikasi.png"
         },
         {
+            "src": "/gtbs-mobile.apk",
+            "dest": "/website/gtbs-mobile.apk",
+            "headers": {
+                "Content-Type": "application/vnd.android.package-archive",
+                "Content-Disposition": "attachment; filename=\"GT-Barcode-System-Mobile.apk\""
+            }
+        },
+        {
+            "src": "/website/gtbs-mobile.apk",
+            "dest": "/website/gtbs-mobile.apk",
+            "headers": {
+                "Content-Type": "application/vnd.android.package-archive",
+                "Content-Disposition": "attachment; filename=\"GT-Barcode-System-Mobile.apk\""
+            }
+        },
+        {
             "src": "/website/assets/(.*)",
             "dest": "/website/assets/$1"
         },
